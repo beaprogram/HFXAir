@@ -31,7 +31,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          tabBarIcon: ({ color }) => <TabBarIcon name="plane" color={color} />,
           headerRight: () => (
             <Link href="/modal" asChild>
               <Pressable>
@@ -71,6 +71,16 @@ export default function TabLayout() {
       tabBarIcon: ({ color }) => <TabBarIcon name="map" color={color} />,
     }}
     />
+
+<Tabs.Screen
+    name="five"
+    options={{
+      title: 'Tab five',
+      tabBarIcon: ({ color }) => <TabBarIcon name="shopping-cart" color={color} />,
+    }}
+    />
+
+
     </Tabs>
   );
 }
