@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; 
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, StatusBar } from 'react-native';
 
 interface LoginScreenProps {
@@ -87,3 +87,4 @@ const styles = StyleSheet.create({
   guestButtonText: { color: '#fff', fontSize: 18, fontWeight: '700' },
   footer: { color: '#999', fontSize: 12, marginTop: 40 },
 });
+//testing
