@@ -57,6 +57,13 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
         onPress={() => onLogin(ticketNumber, flightNumber)}
       >
         <Text style={styles.buttonText}>Log In</Text>
+      </TouchableOpacity >
+
+      <TouchableOpacity
+        style={styles.guestButton}
+        onPress={() => onLogin('', '')}
+      >
+        <Text style={styles.guestButtonText}>Continue as Guest</Text>
       </TouchableOpacity>
 
       <Text style={styles.footer}>© 2025 Airline App</Text>
@@ -76,5 +83,7 @@ const styles = StyleSheet.create({
   input: { height: 52, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 10, paddingHorizontal: 16, color: '#fff', marginBottom: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
   button: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 10, width: '100%', alignItems: 'center' },
   buttonText: { color: '#0C2340', fontSize: 18, fontWeight: '700' },
+  guestButton: { backgroundColor: 'transparent', paddingVertical: 14, borderRadius: 10, width: '100%', alignItems: 'center', borderWidth: 2, borderColor: '#fff', marginTop: 12 },
+  guestButtonText: { color: '#fff', fontSize: 18, fontWeight: '700' },
   footer: { color: '#999', fontSize: 12, marginTop: 40 },
 });
