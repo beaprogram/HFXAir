@@ -1,5 +1,5 @@
 import React, { useState } from 'react'; 
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, StatusBar } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, StatusBar, Alert } from 'react-native';
 
 interface LoginScreenProps {
   onLogin: (ticketNumber: string, flightNumber: string) => void;
@@ -9,6 +9,22 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const [ticketNumber, setTicketNumber] = useState('');
   const [flightNumber, setFlightNumber] = useState('');
   const [imageError, setImageError] = useState(false);
+
+  const handleLogin = () => {
+    const trimmedTicket = ticketNumber.trim();
+    const trimmedFlight = flightNumber.trim();
+    
+    if (!trimmedTicket || !trimmedFlight) {
+      Alert.alert('Error', 'Please enter both Ticket Number and Flight Number');
+      return;
+    }
+    
+    onLogin(trimmedTicket, trimmedFlight);
+  };
+
+  const handleGuestLogin = () => {
+    onLogin('', '');
+  };
 
   return (
     <View style={styles.container}>
@@ -54,14 +70,14 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => onLogin(ticketNumber, flightNumber)}
+        onPress={handleLogin}
       >
         <Text style={styles.buttonText}>Log In</Text>
-      </TouchableOpacity >
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.guestButton}
-        onPress={() => onLogin('', '')}
+        onPress={handleGuestLogin}
       >
         <Text style={styles.guestButtonText}>Continue as Guest</Text>
       </TouchableOpacity>
@@ -87,4 +103,3 @@ const styles = StyleSheet.create({
   guestButtonText: { color: '#fff', fontSize: 18, fontWeight: '700' },
   footer: { color: '#999', fontSize: 12, marginTop: 40 },
 });
-//testing
