@@ -161,7 +161,68 @@ def departures():
 
 
 def get_arrivals():
-    return []  # temporary
+    conn = psycopg2.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        database=os.getenv("DB_NAME", "airportdb"),
+        user=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD", "yourpassword")
+    )
+    cur = conn.cursor()
+    # Query flights where destination matches the airport (e.g., Halifax)
+    airport = os.getenv("AIRPORT_NAME", "Halifax")
+    query = """
+        SELECT flight_number, status, origin, destination
+        FROM flights
+        WHERE destination = %s
+        ORDER BY flight_number
+    """
+    cur.execute(query, (airport,))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    # Convert rows to list of dictionaries
+    arrivals = []
+    for row in rows:
+        arrivals.append({
+            "flight_number": row[0],
+            "origin": row[2],
+            "destination": row[3],
+            "status": row[1]
+        })
+    
+    return arrivals
 
 def get_departures():
-    return []  # temporary
+    conn = psycopg2.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        database=os.getenv("DB_NAME", "airportdb"),
+        user=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD", "yourpassword")
+    )
+    cur = conn.cursor()
+    # Query flights where origin matches the airport
+    airport = os.getenv("AIRPORT_NAME", "Halifax")
+    query = """
+        SELECT flight_number, status, origin, destination
+        FROM flights
+        WHERE origin = %s
+        ORDER BY flight_number
+    """
+    cur.execute(query, (airport,))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    # Convert rows to list of dictionaries
+    departures = []
+    for row in rows:
+        departures.append({
+            "flight_number": row[0],
+            "origin": row[2],
+            "destination": row[3],
+            "status": row[1]
+        })
+    
+    return departures
+
