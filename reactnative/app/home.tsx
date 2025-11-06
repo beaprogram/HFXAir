@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+
+const ArrivalsScreen = require('./(tabs)/arrivals').default;
+
+interface HomeScreenProps {
+  userData?: {ticketNumber: string, flightNumber: string} | null;
+  onLogout?: () => void;
+}
 
 interface TileData {
   id: string;
@@ -18,23 +25,75 @@ const tiles: TileData[] = [
   { id: 'about', label: 'About', icon: 'info-circle', accessibilityLabel: 'About Halifax Stanfield Airport' },
 ];
 
-export default function HomeScreen() {
+export default function HomeScreen({ userData, onLogout }: HomeScreenProps) {
   const [selectedTab, setSelectedTab] = useState('arrivals');
+
+  const renderContent = () => {
+    switch (selectedTab) {
+      case 'arrivals':
+        return <ArrivalsScreen showHeader={false} />;
+      
+      case 'departures':
+        return (
+          <View style={styles.emptyContent}>
+            <FontAwesome name="hand-pointer-o" size={48} color="#ccc" />
+            <Text style={styles.emptyText}>Departures - Coming Soon</Text>
+          </View>
+        );
+      
+      case 'map':
+        return (
+          <View style={styles.emptyContent}>
+            <FontAwesome name="hand-pointer-o" size={48} color="#ccc" />
+            <Text style={styles.emptyText}>Airport Map - Coming Soon</Text>
+          </View>
+        );
+      
+      case 'shops':
+        return (
+          <View style={styles.emptyContent}>
+            <FontAwesome name="hand-pointer-o" size={48} color="#ccc" />
+            <Text style={styles.emptyText}>Shops - Coming Soon</Text>
+          </View>
+        );
+      
+      case 'parking':
+        return (
+          <View style={styles.emptyContent}>
+            <FontAwesome name="hand-pointer-o" size={48} color="#ccc" />
+            <Text style={styles.emptyText}>Parking - Coming Soon</Text>
+          </View>
+        );
+      
+      case 'about':
+        return (
+          <View style={styles.emptyContent}>
+            <FontAwesome name="hand-pointer-o" size={48} color="#ccc" />
+            <Text style={styles.emptyText}>About - Coming Soon</Text>
+          </View>
+        );
+      
+      default:
+        return (
+          <View style={styles.emptyContent}>
+            <FontAwesome name="hand-pointer-o" size={48} color="#ccc" />
+            <Text style={styles.emptyText}>Select a section below</Text>
+          </View>
+        );
+    }
+  };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0C2340" />
+      
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Halifax Stanfield</Text>
         <Text style={styles.headerSubtitle}>International Airport</Text>
       </View>
       
       <View style={styles.mainContent}>
-        {/* Empty content area with visual indicator */}
-        <View style={styles.emptyContent}>
-          <FontAwesome name="hand-pointer-o" size={48} color="#ccc" />
-          <Text style={styles.emptyText}>Select a section below</Text>
-        </View>
+        {renderContent()}
       </View>
 
       <View style={styles.bottomNav}>
@@ -90,6 +149,7 @@ const styles = StyleSheet.create({
   },
   mainContent: { 
     flex: 1,
+    backgroundColor: '#f5f5f5',
   },
   emptyContent: {
     flex: 1,
