@@ -47,3 +47,22 @@ def test_login_returns_valid_token(client):
     assert "ticket_no" in decoded
     assert "exp" in decoded
     
+def test_login_uses_db_query(monkeypatch, client):
+    called = {}
+
+    # Mock DB function
+    def fake_check_db(flight_no, ticket_no):
+        called["used"] = True
+        return True  # simulate found record
+
+    # Temporarily replace real function
+    monkeypatch.setattr(app, "check_db_for_ticket", fake_check_db)
+
+    response = client.post("/login", json={
+        "flight_number": "AC123",
+        "ticket_number": "TCK5678"
+    })
+
+    assert called.get("used"), "Expected DB query to be used"
+    assert response.status_code == 200
+    assert "token" in response.json

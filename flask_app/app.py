@@ -1,6 +1,7 @@
 # app.py
 from flask import Flask, request, jsonify
 import jwt
+import psycopg2
 from datetime import datetime, timedelta
 app = Flask(__name__)
 TOKEN_EXPIRY_HOURS = 24
@@ -34,10 +35,30 @@ def login():
     flight_number = data.get("flight_number")
     ticket_number = data.get("ticket_number")
     
-    if flight_number == "AC123" and ticket_number == "TCK5678":
+    if check_db_for_ticket(flight_number, ticket_number):
         token = create_token(flight_number, ticket_number)
         return jsonify({"token": token}), 200
     return jsonify({"error": "Invalid flight or ticket"}), 401
+
+def check_db_for_ticket(flight_no, ticket_no):
+    conn = psycopg2.connect(
+        host="localhost",
+        database="airportdb",
+        user="postgres",
+        password="yourpassword"
+    )
+    cur = conn.cursor()
+    query = """
+        SELECT 1 FROM tickets t
+        JOIN flights f ON t.flight_id = f.flight_id
+        WHERE f.flight_number = %s AND t.ticket_number = %s
+        LIMIT 1
+    """
+    cur.execute(query, (flight_no, ticket_no))
+    found = cur.fetchone()
+    cur.close()
+    conn.close()
+    return bool(found)
 
 def create_token(flight_no, ticket_no):
     payload = {
@@ -46,3 +67,4 @@ def create_token(flight_no, ticket_no):
         "exp": datetime.utcnow() + timedelta(hours=TOKEN_EXPIRY_HOURS)
     }
     return jwt.encode(payload, SECRET, algorithm="HS256")
+
