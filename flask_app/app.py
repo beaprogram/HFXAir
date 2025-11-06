@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from pathlib import Path
 
+from functools import wraps
+from flask import request, jsonify
 
 
 # Load environment variables from .env file
@@ -79,6 +81,7 @@ def login():
     return jsonify({"error": "Invalid flight or ticket"}), 401
 
 
+
 def require_auth(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -97,6 +100,13 @@ def require_auth(f):
 
         return f(*args, **kwargs)
     return wrapper
+
+
+@app.get("/protected-test")
+@require_auth
+def protected_test():
+    return jsonify({"message": "Access granted"}), 200
+
 
 @app.get("/flights")
 def get_flights():
