@@ -1,6 +1,7 @@
 # app.py
 from flask import Flask, request, jsonify
 app = Flask(__name__)
+SECRET = "hfxair-app-secret"
 
 
 # login route
