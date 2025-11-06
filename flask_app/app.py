@@ -149,3 +149,19 @@ def get_flight_by_id(flight_id):
         }
     return None
 
+@app.get("/flights/arrivals")
+def arrivals():
+    flights = get_arrivals()
+    return jsonify(flights), 200
+
+@app.get("/flights/departures")
+def departures():
+    flights = get_departures()
+    return jsonify(flights), 200
+
+
+def get_arrivals():
+    return []  # temporary
+
+def get_departures():
+    return []  # temporary
