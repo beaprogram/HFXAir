@@ -255,4 +255,22 @@ def subscribe():
 
 
 def save_subscription(ticket_no, flight_id, expo_token):
-    pass  # placeholder
+    """
+    Save user subscription to database.
+    Inserts subscription record, ignoring duplicates (ON CONFLICT DO NOTHING).
+    """
+    conn = psycopg2.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        database=os.getenv("DB_NAME", "airportdb"),
+        user=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD", "yourpassword")
+    )
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO user_subscriptions (ticket_no, flight_id, expo_token)
+        VALUES (%s, %s, %s)
+        ON CONFLICT DO NOTHING
+    """, (ticket_no, flight_id, expo_token))
+    conn.commit()
+    cur.close()
+    conn.close()
