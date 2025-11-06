@@ -17,3 +17,6 @@ def test_get_flight_details(client, monkeypatch):
     response = client.get("/flights/1")
     assert response.status_code == 200
     assert response.json == sample_flight
+
+
+

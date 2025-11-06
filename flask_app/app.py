@@ -112,3 +112,15 @@ def get_all_flights():
         })
     
     return flights
+
+
+@app.get("/flights/<int:flight_id>")
+def get_flight_details(flight_id):
+    flight = get_flight_by_id(flight_id)
+    if flight:
+        return jsonify(flight), 200
+    return jsonify({"error": "Flight not found"}), 404
+
+
+def get_flight_by_id(flight_id):
+    return None
