@@ -78,9 +78,6 @@ def login():
     return jsonify({"error": "Invalid flight or ticket"}), 401
 
 
-
-
-
 @app.get("/flights")
 def get_flights():
     flights = get_all_flights()
@@ -95,7 +92,7 @@ def get_all_flights():
     )
     cur = conn.cursor()
     query = """
-        SELECT flight_number, status, source, destination
+        SELECT flight_number, status, origin, destination
         FROM flights
         ORDER BY flight_number
     """
