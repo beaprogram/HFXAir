@@ -2,7 +2,7 @@ import json
 import jwt
 import pytest
 from app import SECRET  # same secret used in app.py
-
+import app
 
 def test_login_success(client):
     data = {"flight_number": "AC450", "ticket_number": "TCK456"}
@@ -47,9 +47,8 @@ def test_login_returns_valid_token(client):
     assert "ticket_no" in decoded
     assert "exp" in decoded
     
-import app
-
 def test_login_uses_db_query(monkeypatch, client):
+
     called = {}
 
     # Mock DB function
@@ -68,3 +67,25 @@ def test_login_uses_db_query(monkeypatch, client):
     assert called.get("used"), "Expected DB query to be used"
     assert response.status_code == 200
     assert "token" in response.json
+
+
+
+
+def test_missing_token_returns_401(client):
+    res = client.get("/protected-test")  # dummy route for testing
+    assert res.status_code == 401
+    assert "error" in res.json
+
+
+def test_invalid_token_returns_401(client):
+    headers = {"Authorization": "Bearer invalid_token"}
+    res = client.get("/protected-test", headers=headers)
+    assert res.status_code == 401
+
+
+def test_valid_token_allows_access(client):
+    token = jwt.encode({"ticket_no": "TCK123", "flight_no": "AC123"}, SECRET, algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+    res = client.get("/protected-test", headers=headers)
+    assert res.status_code == 200
+    assert res.json == {"message": "Access granted"}

@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from pathlib import Path
 
+
+
 # Load environment variables from .env file
 # Get the directory where this file is located
 env_path = Path(__file__).parent / '.env'
@@ -58,7 +60,6 @@ def create_token(flight_no, ticket_no):
     }
     return jwt.encode(payload, SECRET, algorithm="HS256")
 
-
 # login route
 @app.post("/login")
 def login():
@@ -77,6 +78,25 @@ def login():
         return jsonify({"token": token}), 200
     return jsonify({"error": "Invalid flight or ticket"}), 401
 
+
+def require_auth(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return jsonify({"error": "Missing token"}), 401
+
+        token = auth_header.split(" ")[1]
+        try:
+            decoded = jwt.decode(token, SECRET, algorithms=["HS256"])
+            request.user = decoded
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token expired"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Invalid token"}), 401
+
+        return f(*args, **kwargs)
+    return wrapper
 
 @app.get("/flights")
 def get_flights():
@@ -171,7 +191,7 @@ def get_arrivals():
     # Query flights where destination matches the airport (e.g., Halifax)
     airport = os.getenv("AIRPORT_NAME", "Halifax")
     query = """
-        SELECT flight_number, status, origin, destination
+        SELECT flight_number, status, origin, destination, arrival_time
         FROM flights
         WHERE destination = %s
         ORDER BY flight_number
@@ -188,7 +208,8 @@ def get_arrivals():
             "flight_number": row[0],
             "origin": row[2],
             "destination": row[3],
-            "status": row[1]
+            "status": row[1],
+            "arrival_time": row[4].isoformat() if row[4] else None
         })
     
     return arrivals
@@ -204,7 +225,7 @@ def get_departures():
     # Query flights where origin matches the airport
     airport = os.getenv("AIRPORT_NAME", "Halifax")
     query = """
-        SELECT flight_number, status, origin, destination
+        SELECT flight_number, status, origin, destination, departure_time
         FROM flights
         WHERE origin = %s
         ORDER BY flight_number
@@ -221,7 +242,8 @@ def get_departures():
             "flight_number": row[0],
             "origin": row[2],
             "destination": row[3],
-            "status": row[1]
+            "status": row[1],
+            "departure_time": row[4].isoformat() if row[4] else None
         })
     
     return departures
