@@ -30,25 +30,6 @@ def check_empty(data):
     
     return None
 
-
-# login route
-@app.post("/login")
-def login():
-    data = request.json
-    
-    # Validate required fields are present and not empty/None
-    error_response = check_empty(data)
-    if error_response:
-        return error_response
-    
-    flight_number = data.get("flight_number")
-    ticket_number = data.get("ticket_number")
-    
-    if check_db_for_ticket(flight_number, ticket_number):
-        token = create_token(flight_number, ticket_number)
-        return jsonify({"token": token}), 200
-    return jsonify({"error": "Invalid flight or ticket"}), 401
-
 def check_db_for_ticket(flight_no, ticket_no):
     conn = psycopg2.connect(
         host=os.getenv("DB_HOST", "localhost"),
@@ -77,3 +58,33 @@ def create_token(flight_no, ticket_no):
     }
     return jwt.encode(payload, SECRET, algorithm="HS256")
 
+
+# login route
+@app.post("/login")
+def login():
+    data = request.json
+    
+    # Validate required fields are present and not empty/None
+    error_response = check_empty(data)
+    if error_response:
+        return error_response
+    
+    flight_number = data.get("flight_number")
+    ticket_number = data.get("ticket_number")
+    
+    if check_db_for_ticket(flight_number, ticket_number):
+        token = create_token(flight_number, ticket_number)
+        return jsonify({"token": token}), 200
+    return jsonify({"error": "Invalid flight or ticket"}), 401
+
+
+
+
+
+@app.get("/flights")
+def get_flights():
+    flights = get_all_flights()
+    return jsonify(flights), 200
+
+def get_all_flights():
+    return []  # temporary placeholder
