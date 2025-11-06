@@ -7,12 +7,8 @@ TOKEN_EXPIRY_HOURS = 24
 SECRET = "hfxair-app-secret"
 
 
-# login route
-@app.post("/login")
-def login():
-    data = request.json
-    
-    # Validate required fields are present and not empty/None
+def check_empty(data):
+    """Validate that required fields are present and not empty/None"""
     if not data:
         return jsonify({"error": "Missing required fields"}), 400
     
@@ -21,6 +17,22 @@ def login():
     
     if not flight_number or not ticket_number:
         return jsonify({"error": "Missing required fields"}), 400
+    
+    return None
+
+
+# login route
+@app.post("/login")
+def login():
+    data = request.json
+    
+    # Validate required fields are present and not empty/None
+    error_response = check_empty(data)
+    if error_response:
+        return error_response
+    
+    flight_number = data.get("flight_number")
+    ticket_number = data.get("ticket_number")
     
     if flight_number == "AC123" and ticket_number == "TCK5678":
         token = create_token(flight_number, ticket_number)
