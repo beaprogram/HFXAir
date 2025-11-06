@@ -237,3 +237,22 @@ def get_departures():
     
     return departures
 
+
+
+@app.post("/subscribe")
+@require_auth(SECRET)
+def subscribe():
+    data = request.json or {}
+    flight_id = data.get("flight_id")
+    expo_token = data.get("expo_token")
+
+    if not flight_id or not expo_token:
+        return jsonify({"error": "Missing fields"}), 400
+
+    ticket_no = request.user["ticket_no"]
+    save_subscription(ticket_no, flight_id, expo_token)
+    return jsonify({"message": "Subscribed"}), 200
+
+
+def save_subscription(ticket_no, flight_id, expo_token):
+    pass  # placeholder
