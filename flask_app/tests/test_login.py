@@ -5,7 +5,7 @@ from app import SECRET  # same secret used in app.py
 
 
 def test_login_success(client):
-    data = {"flight_number": "AC123", "ticket_number": "TCK5678"}
+    data = {"flight_number": "AC450", "ticket_number": "TCK456"}
     response = client.post("/login", json=data)
     assert response.status_code == 200
     assert "token" in response.json
@@ -35,7 +35,7 @@ def test_login_missing_fields(client, data, description):
 
 
 def test_login_returns_valid_token(client):
-    data = {"flight_number": "AC123", "ticket_number": "TCK5678"}
+    data = {"flight_number": "AC450", "ticket_number": "TCK456"}
     response = client.post("/login", json=data)
     assert response.status_code == 200
     token = response.json.get("token")
@@ -47,6 +47,8 @@ def test_login_returns_valid_token(client):
     assert "ticket_no" in decoded
     assert "exp" in decoded
     
+import app
+
 def test_login_uses_db_query(monkeypatch, client):
     called = {}
 
@@ -59,8 +61,8 @@ def test_login_uses_db_query(monkeypatch, client):
     monkeypatch.setattr(app, "check_db_for_ticket", fake_check_db)
 
     response = client.post("/login", json={
-        "flight_number": "AC123",
-        "ticket_number": "TCK5678"
+        "flight_number": "AC450",
+        "ticket_number": "TCK456"
     })
 
     assert called.get("used"), "Expected DB query to be used"

@@ -2,7 +2,16 @@
 from flask import Flask, request, jsonify
 import jwt
 import psycopg2
+import os
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Load environment variables from .env file
+# Get the directory where this file is located
+env_path = Path(__file__).parent / '.env'
+load_dotenv(dotenv_path=env_path)
+
 app = Flask(__name__)
 TOKEN_EXPIRY_HOURS = 24
 SECRET = "hfxair-app-secret"
@@ -42,10 +51,10 @@ def login():
 
 def check_db_for_ticket(flight_no, ticket_no):
     conn = psycopg2.connect(
-        host="localhost",
-        database="airportdb",
-        user="postgres",
-        password="yourpassword"
+        host=os.getenv("DB_HOST", "localhost"),
+        database=os.getenv("DB_NAME", "airportdb"),
+        user=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD", "yourpassword")
     )
     cur = conn.cursor()
     query = """
