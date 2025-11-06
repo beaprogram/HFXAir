@@ -8,13 +8,13 @@ def test_get_flight_details(client, monkeypatch):
     }
 
     def fake_get_flight_by_id(flight_id):
-        assert flight_id == 1
+        assert flight_id == 14
         return sample_flight
 
     import app
     monkeypatch.setattr(app, "get_flight_by_id", fake_get_flight_by_id)
 
-    response = client.get("/flights/1")
+    response = client.get("/flights/14")
     assert response.status_code == 200
     assert response.json == sample_flight
 

@@ -107,7 +107,7 @@ def get_all_flights():
         flights.append({
             "flight_number": row[0],
             "status": row[1],
-            "source": row[2],
+            "origin": row[2],
             "destination": row[3]
         })
     
@@ -122,5 +122,30 @@ def get_flight_details(flight_id):
     return jsonify({"error": "Flight not found"}), 404
 
 
-def get_flight_by_id(flight_id):
+def get_flight_by_id(flight_id):    
+    conn = psycopg2.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        database=os.getenv("DB_NAME", "airportdb"),
+        user=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD", "yourpassword")
+    )
+    cur = conn.cursor()
+    query = """
+        SELECT flight_number, status, origin, destination
+        FROM flights
+        WHERE flight_id = %s
+    """
+    cur.execute(query, (flight_id,))
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    
+    if row:
+        return {
+            "flight_number": row[0],
+            "status": row[1],
+            "origin": row[2],
+            "destination": row[3]
+        }
     return None
+
