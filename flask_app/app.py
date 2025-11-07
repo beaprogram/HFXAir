@@ -19,6 +19,10 @@ app = Flask(__name__)
 TOKEN_EXPIRY_HOURS = 24
 SECRET = "hfxair-app-secret"
 
+@app.route('/')
+def home():
+    return jsonify({"message": "Welcome to HFX AIR, your local airport app!"})
+
 
 def check_empty(data):
     """Validate that required fields are present and not empty/None"""
@@ -78,7 +82,6 @@ def login():
         token = create_token(flight_number, ticket_number)
         return jsonify({"token": token}), 200
     return jsonify({"error": "Invalid flight or ticket"}), 401
-
 
 
 @app.get("/protected-test")
