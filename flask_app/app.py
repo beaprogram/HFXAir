@@ -116,6 +116,7 @@ def get_flights():
     return jsonify(flights), 200
 
 def get_all_flights():
+    logging.info("connecting db")
     conn = psycopg2.connect(
         host=os.getenv("DB_HOST", "localhost"),
         database=os.getenv("DB_NAME", "airportdb"),
@@ -128,8 +129,10 @@ def get_all_flights():
         FROM flights
         ORDER BY flight_number
     """
+    logging.info("fetching")
     cur.execute(query)
     rows = cur.fetchall()
+    logging.info(f"fetched {len(rows)} rows")
     cur.close()
     conn.close()
     
