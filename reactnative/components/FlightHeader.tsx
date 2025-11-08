@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { FontAwesome } from "@expo/vector-icons";
 
 interface FlightHeaderProps {
   title: string;
@@ -30,18 +30,32 @@ export const FlightHeader = ({
         <TouchableOpacity
           onPress={onNotificationPress}
           style={styles.notificationButtonEmbedded}
+          accessibilityRole="button"
+          accessibilityLabel={`Notifications${
+            unreadCount > 0 ? `, ${unreadCount} unread` : ""
+          }`}
+          accessibilityHint="Opens notification center"
         >
           <FontAwesome name="bell" size={18} color="#0C2340" />
           {unreadCount > 0 && (
             <View style={styles.notificationBadge}>
-              <Text style={styles.notificationBadgeText}>{unreadCount}</Text>
+              <Text
+                style={styles.notificationBadgeText}
+                accessibilityElementsHidden={true}
+              >
+                {unreadCount}
+              </Text>
             </View>
           )}
         </TouchableOpacity>
         <TouchableOpacity
           onPress={onRefreshPress}
           disabled={isManualRefreshing}
-          style={styles.refreshButtonEmbedded}
+          style={[styles.refreshButtonEmbedded, styles.headerButton]}
+          accessibilityRole="button"
+          accessibilityLabel={isManualRefreshing ? "Refreshing" : "Refresh"}
+          accessibilityHint="Refreshes the flight information"
+          accessibilityState={{ busy: isManualRefreshing }}
         >
           {isManualRefreshing ? (
             <ActivityIndicator size="small" color="#0C2340" />
@@ -70,7 +84,10 @@ const styles = StyleSheet.create({
   },
   headerButtons: {
     flexDirection: "row",
-    gap: 8,
+    alignItems: "center",
+  },
+  headerButton: {
+    marginLeft: 8,
   },
   notificationButtonEmbedded: {
     width: 40,
@@ -80,7 +97,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 2 } as const,
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -94,7 +111,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 2 } as const,
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
