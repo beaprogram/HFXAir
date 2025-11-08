@@ -14,8 +14,7 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.reactnative"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
@@ -23,8 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.reactnative"
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "bundler": "metro",
