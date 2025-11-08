@@ -3,11 +3,13 @@ from flask import Flask, request, jsonify
 import jwt
 import psycopg2
 import os
+import logging
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from pathlib import Path
 
-from auth import require_auth
+from .auth import require_auth
+from .helper.helper_firebase_notification import send_push
 
 
 # Load environment variables from .env file
@@ -15,9 +17,27 @@ from auth import require_auth
 env_path = Path(__file__).parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
 app = Flask(__name__)
+app.config['DEBUG'] = True
 TOKEN_EXPIRY_HOURS = 24
 SECRET = "hfxair-app-secret"
+
+
+@app.post("/send-notification")
+def send_notification():
+    data = request.json
+    token = data.get("token")
+    title = data.get("title", "Default title")
+    body = data.get("body", "Default body")
+    success = send_push(token, title, body)
+    return jsonify({"success": success})
+
 
 @app.route('/')
 def home():
