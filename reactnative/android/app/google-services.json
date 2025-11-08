@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:715096827447:android:950ff1695e57156853c1b2",
+        "mobilesdk_app_id": "1:715096827447:android:b0a3ab22e50de64953c1b2",
         "android_client_info": {
-          "package_name": "com.reactnative"
+          "package_name": "com.anonymous.reactnative"
         }
       },
       "oauth_client": [],
