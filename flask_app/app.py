@@ -1,7 +1,7 @@
 # app.py
 from flask import Flask, request, jsonify
 import jwt
-import psycopg2
+import pymysql
 import os
 import logging
 from datetime import datetime, timedelta
@@ -58,11 +58,13 @@ def check_empty(data):
     return None
 
 def check_db_for_ticket(flight_no, ticket_no):
-    conn = psycopg2.connect(
+    conn = pymysql.connect(
         host=os.getenv("DB_HOST", "localhost"),
         database=os.getenv("DB_NAME", "airportdb"),
-        user=os.getenv("DB_USER", "postgres"),
-        password=os.getenv("DB_PASSWORD", "yourpassword")
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", ""),
+        port=int(os.getenv("DB_PORT", "3306")),
+        connect_timeout=5
     )
     cur = conn.cursor()
     query = """
@@ -116,20 +118,30 @@ def get_flights():
     return jsonify(flights), 200
 
 def get_all_flights():
-    conn = psycopg2.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        database=os.getenv("DB_NAME", "airportdb"),
-        user=os.getenv("DB_USER", "postgres"),
-        password=os.getenv("DB_PASSWORD", "yourpassword")
-    )
+    logging.info("connecting db")
+    try:
+        conn = pymysql.connect(
+            host=os.getenv("DB_HOST", "localhost"),
+            database=os.getenv("DB_NAME", "airportdb"),
+            user=os.getenv("DB_USER", "root"),
+            password=os.getenv("DB_PASSWORD", ""),
+            port=int(os.getenv("DB_PORT", "3306")),
+            connect_timeout=5
+        )
+    except Exception as e:
+        logging.error(f"db connection failed: {e}")
+        raise
+    
     cur = conn.cursor()
     query = """
         SELECT flight_number, status, origin, destination
         FROM flights
         ORDER BY flight_number
     """
+    logging.info("fetching")
     cur.execute(query)
     rows = cur.fetchall()
+    logging.info(f"fetched {len(rows)} rows")
     cur.close()
     conn.close()
     
@@ -155,11 +167,13 @@ def get_flight_details(flight_id):
 
 
 def get_flight_by_id(flight_id):    
-    conn = psycopg2.connect(
+    conn = pymysql.connect(
         host=os.getenv("DB_HOST", "localhost"),
         database=os.getenv("DB_NAME", "airportdb"),
-        user=os.getenv("DB_USER", "postgres"),
-        password=os.getenv("DB_PASSWORD", "yourpassword")
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", ""),
+        port=int(os.getenv("DB_PORT", "3306")),
+        connect_timeout=5
     )
     cur = conn.cursor()
     query = """
@@ -193,11 +207,13 @@ def departures():
 
 
 def get_arrivals():
-    conn = psycopg2.connect(
+    conn = pymysql.connect(
         host=os.getenv("DB_HOST", "localhost"),
         database=os.getenv("DB_NAME", "airportdb"),
-        user=os.getenv("DB_USER", "postgres"),
-        password=os.getenv("DB_PASSWORD", "yourpassword")
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", ""),
+        port=int(os.getenv("DB_PORT", "3306")),
+        connect_timeout=5
     )
     cur = conn.cursor()
     # Query flights where destination matches the airport (e.g., Halifax)
@@ -227,11 +243,13 @@ def get_arrivals():
     return arrivals
 
 def get_departures():
-    conn = psycopg2.connect(
+    conn = pymysql.connect(
         host=os.getenv("DB_HOST", "localhost"),
         database=os.getenv("DB_NAME", "airportdb"),
-        user=os.getenv("DB_USER", "postgres"),
-        password=os.getenv("DB_PASSWORD", "yourpassword")
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", ""),
+        port=int(os.getenv("DB_PORT", "3306")),
+        connect_timeout=5
     )
     cur = conn.cursor()
     # Query flights where origin matches the airport
@@ -280,19 +298,20 @@ def subscribe():
 def save_subscription(ticket_no, flight_id, expo_token):
     """
     Save user subscription to database.
-    Inserts subscription record, ignoring duplicates (ON CONFLICT DO NOTHING).
+    Inserts subscription record, ignoring duplicates (INSERT IGNORE).
     """
-    conn = psycopg2.connect(
+    conn = pymysql.connect(
         host=os.getenv("DB_HOST", "localhost"),
         database=os.getenv("DB_NAME", "airportdb"),
-        user=os.getenv("DB_USER", "postgres"),
-        password=os.getenv("DB_PASSWORD", "yourpassword")
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", ""),
+        port=int(os.getenv("DB_PORT", "3306")),
+        connect_timeout=5
     )
     cur = conn.cursor()
     cur.execute("""
-        INSERT INTO user_subscriptions (ticket_no, flight_id, expo_token)
+        INSERT IGNORE INTO user_subscriptions (ticket_no, flight_id, expo_token)
         VALUES (%s, %s, %s)
-        ON CONFLICT DO NOTHING
     """, (ticket_no, flight_id, expo_token))
     conn.commit()
     cur.close()
