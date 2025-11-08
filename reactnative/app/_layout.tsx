@@ -4,6 +4,8 @@ import LoginScreen from "./login";
 import LoadingScreen from "./loading";
 import GuestFlightsScreen from "./guest-flight";
 import HomeScreen from "./home";
+import { getApp } from "@react-native-firebase/app";
+import { getMessaging, getToken, onMessage } from "@react-native-firebase/messaging";
 
 export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -34,8 +36,9 @@ export default function RootLayout() {
 
   const requestToken = async () => {
     try {
-      await messaging().registerDeviceForRemoteMessages();
-      const token = await messaging().getToken();
+      const app = getApp();
+      const messaging = getMessaging(app);
+      const token = await getToken(messaging);
       console.log("FCM Token:", token);
     } catch (error) {
       console.log(error);
