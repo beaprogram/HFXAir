@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-nativ
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 const ArrivalsScreen = require('./(tabs)/arrivals').default;
+const DeparturesScreen = require('./(tabs)/departures').default;
 
 interface HomeScreenProps {
   userData?: {ticketNumber: string, flightNumber: string} | null;
@@ -34,12 +35,7 @@ export default function HomeScreen({ userData, onLogout }: HomeScreenProps) {
         return <ArrivalsScreen showHeader={false} />;
       
       case 'departures':
-        return (
-          <View style={styles.emptyContent}>
-            <FontAwesome name="hand-pointer-o" size={48} color="#ccc" />
-            <Text style={styles.emptyText}>Departures - Coming Soon</Text>
-          </View>
-        );
+        return <DeparturesScreen showHeader={false} />;
       
       case 'map':
         return (
