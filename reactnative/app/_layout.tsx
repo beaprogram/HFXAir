@@ -4,7 +4,6 @@ import LoginScreen from "./login";
 import LoadingScreen from "./loading";
 import GuestFlightsScreen from "./guest-flight";
 import HomeScreen from "./home";
-import messaging from "@react-native-firebase/messaging";
 
 export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
