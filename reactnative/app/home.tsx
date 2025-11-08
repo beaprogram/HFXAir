@@ -4,6 +4,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 const ArrivalsScreen = require('./(tabs)/arrivals').default;
 const DeparturesScreen = require('./(tabs)/departures').default;
+const ShopsScreen = require('./(tabs)/shops').default;
 
 interface HomeScreenProps {
   userData?: {ticketNumber: string, flightNumber: string} | null;
@@ -37,26 +38,21 @@ export default function HomeScreen({ userData, onLogout }: HomeScreenProps) {
       case 'departures':
         return <DeparturesScreen showHeader={false} />;
       
+      case 'shops':
+        return <ShopsScreen showHeader={false} />;
+      
       case 'map':
         return (
           <View style={styles.emptyContent}>
-            <FontAwesome name="hand-pointer-o" size={48} color="#ccc" />
+            <FontAwesome name="map" size={48} color="#ccc" />
             <Text style={styles.emptyText}>Airport Map - Coming Soon</Text>
-          </View>
-        );
-      
-      case 'shops':
-        return (
-          <View style={styles.emptyContent}>
-            <FontAwesome name="hand-pointer-o" size={48} color="#ccc" />
-            <Text style={styles.emptyText}>Shops - Coming Soon</Text>
           </View>
         );
       
       case 'parking':
         return (
           <View style={styles.emptyContent}>
-            <FontAwesome name="hand-pointer-o" size={48} color="#ccc" />
+            <FontAwesome name="car" size={48} color="#ccc" />
             <Text style={styles.emptyText}>Parking - Coming Soon</Text>
           </View>
         );
@@ -64,7 +60,7 @@ export default function HomeScreen({ userData, onLogout }: HomeScreenProps) {
       case 'about':
         return (
           <View style={styles.emptyContent}>
-            <FontAwesome name="hand-pointer-o" size={48} color="#ccc" />
+            <FontAwesome name="info-circle" size={48} color="#ccc" />
             <Text style={styles.emptyText}>About - Coming Soon</Text>
           </View>
         );
