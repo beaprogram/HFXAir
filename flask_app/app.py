@@ -117,12 +117,18 @@ def get_flights():
 
 def get_all_flights():
     logging.info("connecting db")
-    conn = psycopg2.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        database=os.getenv("DB_NAME", "airportdb"),
-        user=os.getenv("DB_USER", "postgres"),
-        password=os.getenv("DB_PASSWORD", "yourpassword")
-    )
+    try:
+        conn = psycopg2.connect(
+            host=os.getenv("DB_HOST", "localhost"),
+            database=os.getenv("DB_NAME", "airportdb"),
+            user=os.getenv("DB_USER", "postgres"),
+            password=os.getenv("DB_PASSWORD", "yourpassword"),
+            connect_timeout=5
+        )
+    except Exception as e:
+        logging.error(f"db connection failed: {e}")
+        raise
+    
     cur = conn.cursor()
     query = """
         SELECT flight_number, status, origin, destination
