@@ -1,4 +1,4 @@
-import psycopg2
+import pymysql
 import os
 from dotenv import load_dotenv
 from pathlib import Path
@@ -9,24 +9,26 @@ load_dotenv(dotenv_path=env_path)
 print("Testing database connection...")
 print(f"DB_HOST: {os.getenv('DB_HOST', 'localhost')}")
 print(f"DB_NAME: {os.getenv('DB_NAME', 'airportdb')}")
-print(f"DB_USER: {os.getenv('DB_USER', 'postgres')}")
+print(f"DB_USER: {os.getenv('DB_USER', 'root')}")
 print(f"DB_PASSWORD: {'*' * len(os.getenv('DB_PASSWORD', ''))}")
+print(f"DB_PORT: {os.getenv('DB_PORT', '3306')}")
 
 try:
     print("\nConnecting...")
-    conn = psycopg2.connect(
+    conn = pymysql.connect(
         host=os.getenv("DB_HOST", "localhost"),
         database=os.getenv("DB_NAME", "airportdb"),
-        user=os.getenv("DB_USER", "postgres"),
-        password=os.getenv("DB_PASSWORD", "yourpassword"),
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", ""),
+        port=int(os.getenv("DB_PORT", "3306")),
         connect_timeout=5
     )
     print("✓ Connected successfully!")
     
     cur = conn.cursor()
-    cur.execute("SELECT version();")
+    cur.execute("SELECT VERSION();")
     version = cur.fetchone()
-    print(f"✓ PostgreSQL version: {version[0]}")
+    print(f"✓ MariaDB/MySQL version: {version[0]}")
     
     cur.execute("SELECT COUNT(*) FROM flights;")
     count = cur.fetchone()
@@ -36,7 +38,7 @@ try:
     conn.close()
     print("\n✓ Database connection test passed!")
     
-except psycopg2.OperationalError as e:
+except pymysql.Error as e:
     print(f"\n✗ Connection failed: {e}")
 except Exception as e:
     print(f"\n✗ Error: {e}")

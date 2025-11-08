@@ -1,6 +1,6 @@
 flask
 flask_sqlalchemy
-psycopg2-binary
+PyMySQL
 python-dotenv
 pytest
 pytest-flask
