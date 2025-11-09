@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { useFlightRefresh } from "../hooks/useFlightRefresh";
 import { NotificationCenter } from "../components/NotificationCenter";
 import { PushNotificationBanner } from "../components/PushNotificationBanner";
 import { FlightHeader } from "../components/FlightHeader";
+import axios from "axios";
 
 interface Flight {
   id: string;
@@ -130,6 +131,7 @@ export default function DeparturesScreen({
   showHeader = true,
 }: DeparturesScreenProps) {
   const [flights, setFlights] = useState<Flight[]>(generateMockFlights());
+  const [data, setData] = useState([]);
 
   const {
     notifications,
@@ -143,6 +145,23 @@ export default function DeparturesScreen({
   } = useFlightNotifications(flights, setFlights, "departure");
 
   const { refreshing, isManualRefreshing, handleRefresh } = useFlightRefresh();
+
+
+  const getFlightDetails = async () => {
+    try{
+      const response = await axios.get('http://172.17.1.217:5000/flights');
+      
+      setData(response?.data)
+      
+    } catch(error){
+      console.log(error)
+    }
+  }
+
+  useEffect(()=>{
+    getFlightDetails()
+  },[])
+
 
   return (
     <View style={styles.containerNoHeader}>
