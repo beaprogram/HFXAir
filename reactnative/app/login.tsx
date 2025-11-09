@@ -38,9 +38,16 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
       onLogin(trimmedTicket, trimmedFlight, response.data);
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || 'Invalid credentials';
+      // Try to get error from different response formats
+      const errorMessage = 
+        error.response?.data?.error || 
+        error.response?.data?.message || 
+        error.response?.data?.msg ||
+        error.message || 
+        'Invalid credentials';
+      
       Alert.alert('Login Failed', errorMessage);
-      console.error(error);
+      console.error('Login Error:', error.response?.data || error.message);
     } finally {
       setLoading(false);
     }
