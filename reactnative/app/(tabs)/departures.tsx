@@ -40,74 +40,6 @@ interface DeparturesScreenProps {
   showHeader?: boolean;
 }
 
-const generateMockFlights = (): Flight[] => [
-  {
-    id: "1",
-    flightNumber: "AC1001",
-    airline: "Air Canada",
-    to: "Montreal (YUL)",
-    scheduledTime: "08:30",
-    actualTime: "08:30",
-    status: "On Time",
-    gate: "A15",
-    terminal: "Terminal 1",
-    boardingTime: "08:00",
-    notificationsEnabled: false,
-  },
-  {
-    id: "2",
-    flightNumber: "WS2345",
-    airline: "WestJet",
-    to: "Vancouver (YVR)",
-    scheduledTime: "10:15",
-    actualTime: "10:15",
-    status: "Boarding",
-    gate: "B22",
-    terminal: "Terminal 1",
-    boardingTime: "09:45",
-    notificationsEnabled: false,
-  },
-  {
-    id: "3",
-    flightNumber: "AA4567",
-    airline: "American Airlines",
-    to: "New York (JFK)",
-    scheduledTime: "12:45",
-    actualTime: "13:20",
-    status: "Delayed",
-    gate: "C8",
-    terminal: "Terminal 1",
-    boardingTime: "12:50",
-    notificationsEnabled: false,
-  },
-  {
-    id: "4",
-    flightNumber: "UA7890",
-    airline: "United Airlines",
-    to: "Chicago (ORD)",
-    scheduledTime: "14:30",
-    actualTime: "14:30",
-    status: "On Time",
-    gate: "A10",
-    terminal: "Terminal 1",
-    boardingTime: "14:00",
-    notificationsEnabled: false,
-  },
-  {
-    id: "5",
-    flightNumber: "DL3210",
-    airline: "Delta Airlines",
-    to: "Atlanta (ATL)",
-    scheduledTime: "16:00",
-    actualTime: "16:00",
-    status: "Check-In",
-    gate: "B5",
-    terminal: "Terminal 1",
-    boardingTime: "15:30",
-    notificationsEnabled: false,
-  },
-];
-
 const getStatusColor = (status: string) => {
   switch (status) {
     case "Boarding":
@@ -130,7 +62,7 @@ const getStatusColor = (status: string) => {
 export default function DeparturesScreen({
   showHeader = true,
 }: DeparturesScreenProps) {
-  const [flights, setFlights] = useState<Flight[]>(generateMockFlights());
+  const [flights, setFlights] = useState<Flight[]>([]);
   const [data, setData] = useState([]);
 
   const {
@@ -146,22 +78,42 @@ export default function DeparturesScreen({
 
   const { refreshing, isManualRefreshing, handleRefresh } = useFlightRefresh();
 
-
   const getFlightDetails = async () => {
-    try{
-      const response = await axios.get('http://172.17.1.217:5000/flights');
-      
-      setData(response?.data)
-      
-    } catch(error){
-      console.log(error)
+    try {
+      const response = await axios.get("http://172.17.1.217:5000/flights");
+      setData(response?.data);
+    } catch (error) {
+      console.log(error);
     }
-  }
+  };
 
-  useEffect(()=>{
-    getFlightDetails()
-  },[])
+  useEffect(() => {
+    getFlightDetails();
+  }, []);
 
+  useEffect(() => {
+    if (data && Array.isArray(data) && data.length > 0) {
+      const departingFlights = data.filter(
+        (flight: any) => flight.from === "Halifax (YHZ)"
+      );
+
+      const formattedFlights = departingFlights.map((flight: any) => ({
+        id: flight.id,
+        flightNumber: flight.flightNumber,
+        airline: flight.airline,
+        to: flight.to,
+        scheduledTime: flight.scheduledTime,
+        actualTime: flight.actualTime,
+        status: flight.status,
+        gate: flight.gate,
+        terminal: flight.terminal,
+        boardingTime: flight.boardingTime || "N/A",
+        notificationsEnabled: flight.notificationsEnabled || false,
+      }));
+
+      setFlights(formattedFlights);
+    }
+  }, [data]);
 
   return (
     <View style={styles.containerNoHeader}>
@@ -243,7 +195,7 @@ export default function DeparturesScreen({
                       flight.status === "Delayed" && styles.delayedTime,
                     ]}
                   >
-                    {flight.actualTime}
+                    {flight?.actualTime || "-"}
                   </Text>
                 </View>
               </View>
