@@ -5,6 +5,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 const ArrivalsScreen = require('./(tabs)/arrivals').default;
 const DeparturesScreen = require('./(tabs)/departures').default;
 const ShopsScreen = require('./(tabs)/shops').default;
+const ParkingScreen = require('./(tabs)/ParkingScreen').default;
 
 interface HomeScreenProps {
   userData?: {ticketNumber: string, flightNumber: string} | null;
@@ -50,12 +51,7 @@ export default function HomeScreen({ userData, onLogout }: HomeScreenProps) {
         );
       
       case 'parking':
-        return (
-          <View style={styles.emptyContent}>
-            <FontAwesome name="car" size={48} color="#ccc" />
-            <Text style={styles.emptyText}>Parking - Coming Soon</Text>
-          </View>
-        );
+        return <ParkingScreen />;
       
       case 'about':
         return (
