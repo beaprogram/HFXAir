@@ -29,6 +29,18 @@ TOKEN_EXPIRY_HOURS = 24
 SECRET = "hfxair-app-secret"
 
 
+def get_db_connection():
+
+    return pymysql.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        database=os.getenv("DB_NAME", "hfxair"),
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", ""),
+        port=int(os.getenv("DB_PORT", "3306")),
+        connect_timeout=5
+    )
+
+
 @app.post("/send-notification")
 def send_notification():
     data = request.json
@@ -58,14 +70,7 @@ def check_empty(data):
     return None
 
 def check_db_for_ticket(flight_no, ticket_no):
-    conn = pymysql.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        database=os.getenv("DB_NAME", "airportdb"),
-        user=os.getenv("DB_USER", "root"),
-        password=os.getenv("DB_PASSWORD", ""),
-        port=int(os.getenv("DB_PORT", "3306")),
-        connect_timeout=5
-    )
+    conn = get_db_connection()
     cur = conn.cursor()
     query = """
         SELECT 1 FROM tickets t
@@ -120,23 +125,33 @@ def get_flights():
 def get_all_flights():
     logging.info("connecting db")
     try:
-        conn = pymysql.connect(
-            host=os.getenv("DB_HOST", "localhost"),
-            database=os.getenv("DB_NAME", "airportdb"),
-            user=os.getenv("DB_USER", "root"),
-            password=os.getenv("DB_PASSWORD", ""),
-            port=int(os.getenv("DB_PORT", "3306")),
-            connect_timeout=5
-        )
+        conn = get_db_connection()
     except Exception as e:
         logging.error(f"db connection failed: {e}")
         raise
     
     cur = conn.cursor()
     query = """
-        SELECT flight_number, status, origin, destination
-        FROM flights
-        ORDER BY flight_number
+        SELECT 
+            f.flight_id,
+            f.flight_number,
+            COALESCE(a.name, 'Unknown Airline') as airline_name,
+            f.origin,
+            f.destination,
+            f.departure_time,
+            fsu.actual_departure_time,
+            COALESCE(fsu.current_status, f.status) as status,
+            f.gate,
+            f.terminal
+        FROM flights f
+        LEFT JOIN airlines a ON f.airline_id = a.airline_id
+        LEFT JOIN flight_status_updates fsu ON f.flight_id = fsu.flight_id
+            AND fsu.update_id = (
+                SELECT MAX(update_id) 
+                FROM flight_status_updates 
+                WHERE flight_id = f.flight_id
+            )
+        ORDER BY f.flight_number
     """
     logging.info("fetching")
     cur.execute(query)
@@ -148,11 +163,29 @@ def get_all_flights():
     # Convert rows to list of dictionaries
     flights = []
     for row in rows:
+        # Format scheduled time as HH:MM
+        scheduled_time = None
+        if row[5]:  # departure_time
+            scheduled_time = row[5].strftime("%H:%M") if isinstance(row[5], datetime) else str(row[5])[:5]
+        
+        # Format actual time as HH:MM
+        actual_time = None
+        if row[6]:  # actual_departure_time
+            actual_time = row[6].strftime("%H:%M") if isinstance(row[6], datetime) else str(row[6])[:5]
+        
         flights.append({
-            "flight_number": row[0],
-            "status": row[1],
-            "origin": row[2],
-            "destination": row[3]
+            "id": str(row[0]),  # flight_id
+            "flightNumber": row[1],  # flight_number
+            "airline": row[2],  # airline_name
+            "from": row[3],  # origin
+            "to": row[4],  # destination
+            "scheduledTime": scheduled_time,
+            "actualTime": actual_time,
+            "status": row[7] if row[7] else "Scheduled",  # status
+            "gate": row[8] if row[8] else None,  # gate
+            "terminal": row[9] if row[9] else None,  # terminal
+            "baggage": None,  # Not in schema
+            "notificationsEnabled": False  # Default to false
         })
     
     return flights
@@ -167,14 +200,7 @@ def get_flight_details(flight_id):
 
 
 def get_flight_by_id(flight_id):    
-    conn = pymysql.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        database=os.getenv("DB_NAME", "airportdb"),
-        user=os.getenv("DB_USER", "root"),
-        password=os.getenv("DB_PASSWORD", ""),
-        port=int(os.getenv("DB_PORT", "3306")),
-        connect_timeout=5
-    )
+    conn = get_db_connection()
     cur = conn.cursor()
     query = """
         SELECT flight_number, status, origin, destination
@@ -207,22 +233,33 @@ def departures():
 
 
 def get_arrivals():
-    conn = pymysql.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        database=os.getenv("DB_NAME", "airportdb"),
-        user=os.getenv("DB_USER", "root"),
-        password=os.getenv("DB_PASSWORD", ""),
-        port=int(os.getenv("DB_PORT", "3306")),
-        connect_timeout=5
-    )
+    conn = get_db_connection()
     cur = conn.cursor()
     # Query flights where destination matches the airport (e.g., Halifax)
     airport = os.getenv("AIRPORT_NAME", "Halifax")
     query = """
-        SELECT flight_number, status, origin, destination, arrival_time
-        FROM flights
-        WHERE destination = %s
-        ORDER BY flight_number
+        SELECT 
+            f.flight_id,
+            f.flight_number,
+            COALESCE(a.name, 'Unknown Airline') as airline_name,
+            f.origin,
+            f.destination,
+            f.arrival_time,
+            fsu.actual_arrival_time,
+            COALESCE(fsu.current_status, f.status) as status,
+            f.gate,
+            f.terminal,
+            f.baggage
+        FROM flights f
+        LEFT JOIN airlines a ON f.airline_id = a.airline_id
+        LEFT JOIN flight_status_updates fsu ON f.flight_id = fsu.flight_id
+            AND fsu.update_id = (
+                SELECT MAX(update_id) 
+                FROM flight_status_updates 
+                WHERE flight_id = f.flight_id
+            )
+        WHERE f.destination = %s
+        ORDER BY f.flight_number
     """
     cur.execute(query, (airport,))
     rows = cur.fetchall()
@@ -232,33 +269,56 @@ def get_arrivals():
     # Convert rows to list of dictionaries
     arrivals = []
     for row in rows:
+        
+        # Format actual time as HH:MM
+        actual_time = None
+        if row[6]:  # actual_arrival_time
+            actual_time = row[6].strftime("%H:%M") if isinstance(row[6], datetime) else str(row[6])[:5]
+        
         arrivals.append({
-            "flight_number": row[0],
-            "origin": row[2],
-            "destination": row[3],
-            "status": row[1],
-            "arrival_time": row[4].isoformat() if row[4] else None
+            "id": str(row[0]),  # flight_id
+            "flightNumber": row[1],  # flight_number
+            "airline": row[2],  # airline_name
+            "from": row[3],  # origin
+            "to": row[4],  # destination
+            "scheduledTime": row[5],
+            "actualTime": row[6] if row[6] else row[5],
+            "status": row[7] if row[7] else "Scheduled",  # status
+            "gate": row[8] if row[8] else None,  # gate
+            "terminal": row[9] if row[9] else None,  # terminal
+            "baggage": row[10] if row[10] else None,  # baggage
+            "notificationsEnabled": False  # Default to false
         })
     
     return arrivals
 
 def get_departures():
-    conn = pymysql.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        database=os.getenv("DB_NAME", "airportdb"),
-        user=os.getenv("DB_USER", "root"),
-        password=os.getenv("DB_PASSWORD", ""),
-        port=int(os.getenv("DB_PORT", "3306")),
-        connect_timeout=5
-    )
+    conn = get_db_connection()
     cur = conn.cursor()
     # Query flights where origin matches the airport
     airport = os.getenv("AIRPORT_NAME", "Halifax")
     query = """
-        SELECT flight_number, status, origin, destination, departure_time
-        FROM flights
-        WHERE origin = %s
-        ORDER BY flight_number
+        SELECT 
+            f.flight_id,
+            f.flight_number,
+            COALESCE(a.name, 'Unknown Airline') as airline_name,
+            f.destination,
+            f.departure_time,
+            fsu.actual_departure_time,
+            COALESCE(fsu.current_status, f.status) as status,
+            f.gate,
+            f.terminal,
+            f.boarding_time
+        FROM flights f
+        LEFT JOIN airlines a ON f.airline_id = a.airline_id
+        LEFT JOIN flight_status_updates fsu ON f.flight_id = fsu.flight_id
+            AND fsu.update_id = (
+                SELECT MAX(update_id) 
+                FROM flight_status_updates 
+                WHERE flight_id = f.flight_id
+            )
+        WHERE f.origin = %s
+        ORDER BY f.flight_number
     """
     cur.execute(query, (airport,))
     rows = cur.fetchall()
@@ -268,12 +328,24 @@ def get_departures():
     # Convert rows to list of dictionaries
     departures = []
     for row in rows:
+
+        # Format boarding time as HH:MM
+        boarding_time = None
+        if row[9]:  # boarding_time
+            boarding_time = row[9].strftime("%H:%M") if isinstance(row[9], datetime) else str(row[9])[:5]
+        
         departures.append({
-            "flight_number": row[0],
-            "origin": row[2],
-            "destination": row[3],
-            "status": row[1],
-            "departure_time": row[4].isoformat() if row[4] else None
+            "id": str(row[0]),  # flight_id
+            "flightNumber": row[1],  # flight_number
+            "airline": row[2],  # airline_name
+            "to": row[3],  # destination
+            "scheduledTime": row[4],
+            "actualTime": row[5] if row[5] else row[4],  # actual_departure_time (as is)
+            "status": row[6] if row[6] else "Scheduled",  # status
+            "gate": row[7] if row[7] else None,  # gate
+            "terminal": row[8] if row[8] else None,  # terminal
+            "boardingTime": boarding_time,
+            "notificationsEnabled": False  # Default to false
         })
     
     return departures
@@ -300,14 +372,7 @@ def save_subscription(ticket_no, flight_id, expo_token):
     Save user subscription to database.
     Inserts subscription record, ignoring duplicates (INSERT IGNORE).
     """
-    conn = pymysql.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        database=os.getenv("DB_NAME", "airportdb"),
-        user=os.getenv("DB_USER", "root"),
-        password=os.getenv("DB_PASSWORD", ""),
-        port=int(os.getenv("DB_PORT", "3306")),
-        connect_timeout=5
-    )
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
         INSERT IGNORE INTO user_subscriptions (ticket_no, flight_id, expo_token)
