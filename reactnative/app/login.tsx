@@ -1,16 +1,18 @@
 import React, { useState } from 'react'; 
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, StatusBar, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, StatusBar, Alert, ActivityIndicator } from 'react-native';
+import axiosInstance, { setAuthToken } from './services/axiosProvider';
 
 interface LoginScreenProps {
-  onLogin: (ticketNumber: string, flightNumber: string) => void;
+  onLogin: (ticketNumber: string, flightNumber: string, response?: any) => void;
 }
 
 export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const [ticketNumber, setTicketNumber] = useState('');
   const [flightNumber, setFlightNumber] = useState('');
   const [imageError, setImageError] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const trimmedTicket = ticketNumber.trim();
     const trimmedFlight = flightNumber.trim();
     
@@ -18,8 +20,37 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
       Alert.alert('Error', 'Please enter both Ticket Number and Flight Number');
       return;
     }
-    
-    onLogin(trimmedTicket, trimmedFlight);
+
+    setLoading(true);
+    try {
+      console.log(" ==> ", trimmedFlight, trimmedTicket)
+      const response = await axiosInstance.post('/login', {
+        flight_number: trimmedFlight,
+        ticket_number: trimmedTicket,
+      });
+
+      console.log("response ==> ", response?.data)
+
+      // If your backend returns a token, set it here
+      if (response.data.token) {
+        setAuthToken(response.data.token);
+      }
+
+      onLogin(trimmedTicket, trimmedFlight, response.data);
+    } catch (error: any) {
+      // Try to get error from different response formats
+      const errorMessage = 
+        error.response?.data?.error || 
+        error.response?.data?.message || 
+        error.response?.data?.msg ||
+        error.message || 
+        'Invalid credentials';
+      
+      Alert.alert('Login Failed', errorMessage);
+      console.error('Login Error:', error.response?.data || error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGuestLogin = () => {
@@ -57,6 +88,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           placeholderTextColor="#ccc"
           value={ticketNumber}
           onChangeText={setTicketNumber}
+          editable={!loading}
         />
         <TextInput
           style={styles.input}
@@ -65,19 +97,26 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           value={flightNumber}
           onChangeText={setFlightNumber}
           autoCapitalize="characters"
+          editable={!loading}
         />
       </View>
 
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, loading && styles.buttonDisabled]}
         onPress={handleLogin}
+        disabled={loading}
       >
-        <Text style={styles.buttonText}>Log In</Text>
+        {loading ? (
+          <ActivityIndicator color="#0C2340" size="small" />
+        ) : (
+          <Text style={styles.buttonText}>Log In</Text>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.guestButton}
         onPress={handleGuestLogin}
+        disabled={loading}
       >
         <Text style={styles.guestButtonText}>Continue as Guest</Text>
       </TouchableOpacity>
@@ -98,6 +137,7 @@ const styles = StyleSheet.create({
   inputContainer: { width: '100%', marginBottom: 25 },
   input: { height: 52, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 10, paddingHorizontal: 16, color: '#fff', marginBottom: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
   button: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 10, width: '100%', alignItems: 'center' },
+  buttonDisabled: { opacity: 0.7 },
   buttonText: { color: '#0C2340', fontSize: 18, fontWeight: '700' },
   guestButton: { backgroundColor: 'transparent', paddingVertical: 14, borderRadius: 10, width: '100%', alignItems: 'center', borderWidth: 2, borderColor: '#fff', marginTop: 12 },
   guestButtonText: { color: '#fff', fontSize: 18, fontWeight: '700' },
