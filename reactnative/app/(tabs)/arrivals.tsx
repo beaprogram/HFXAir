@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { useFlightRefresh } from "../hooks/useFlightRefresh";
 import { NotificationCenter } from "../components/NotificationCenter";
 import { PushNotificationBanner } from "../components/PushNotificationBanner";
 import { FlightHeader } from "../components/FlightHeader";
+import axios from "axios";
 
 interface Flight {
   id: string;
@@ -40,51 +41,6 @@ interface ArrivalsScreenProps {
   showHeader?: boolean;
 }
 
-const generateMockFlights = (): Flight[] => [
-  {
-    id: "1",
-    flightNumber: "AA1234",
-    airline: "American Airlines",
-    from: "New York (JFK)",
-    to: "Halifax (YHZ)",
-    scheduledTime: "11:45",
-    actualTime: "11:42",
-    status: "On Time",
-    gate: "A12",
-    terminal: "Terminal 1",
-    baggage: "Carousel 3",
-    notificationsEnabled: false,
-  },
-  {
-    id: "2",
-    flightNumber: "AC5678",
-    airline: "Air Canada",
-    from: "Toronto (YYZ)",
-    to: "Halifax (YHZ)",
-    scheduledTime: "16:35",
-    actualTime: "17:10",
-    status: "Delayed",
-    gate: "B8",
-    terminal: "Terminal 1",
-    baggage: "Carousel 1",
-    notificationsEnabled: false,
-  },
-  {
-    id: "3",
-    flightNumber: "WS9012",
-    airline: "WestJet",
-    from: "Calgary (YYC)",
-    to: "Halifax (YHZ)",
-    scheduledTime: "17:15",
-    actualTime: "17:15",
-    status: "On Time",
-    gate: "C15",
-    terminal: "Terminal 1",
-    baggage: "Carousel 2",
-    notificationsEnabled: false,
-  },
-];
-
 const getStatusColor = (status: string) => {
   switch (status) {
     case "Landed":
@@ -106,7 +62,8 @@ const getStatusColor = (status: string) => {
 export default function ArrivalsScreen({
   showHeader = true,
 }: ArrivalsScreenProps) {
-  const [flights, setFlights] = useState<Flight[]>(generateMockFlights());
+  const [flights, setFlights] = useState<Flight[]>([]);
+  const [data, setData] = useState([]);
 
   const {
     notifications,
@@ -120,6 +77,31 @@ export default function ArrivalsScreen({
   } = useFlightNotifications(flights, setFlights, "arrival");
 
   const { refreshing, isManualRefreshing, handleRefresh } = useFlightRefresh();
+  
+  const getFlightDetails = async () => {
+    try{
+      const response = await axios.get('http://172.17.1.217:5000/flights');
+      setData(response?.data)
+      
+      
+    } catch(error){
+      console.log(error)
+    }
+  }
+
+  useEffect(()=>{
+    getFlightDetails()
+  },[])
+
+  useEffect(() => {
+    if (data && Array.isArray(data) && data.length > 0) {
+      const formattedFlights = data.map((flight: any) => ({
+        ...flight,
+        notificationsEnabled: flight.notificationsEnabled || false,
+      }));
+      setFlights(formattedFlights);
+    }
+  }, [data])
 
   return (
     <View style={styles.containerNoHeader}>
@@ -211,7 +193,7 @@ export default function ArrivalsScreen({
                       flight.status === "Delayed" && styles.delayedTime,
                     ]}
                   >
-                    {flight.actualTime}
+                    {flight?.actualTime || "-"}
                   </Text>
                 </View>
               </View>
