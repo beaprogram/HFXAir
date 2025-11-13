@@ -1,4 +1,10 @@
 # ninja log v5
+<<<<<<< HEAD
 0	21	1763062060653860830	CMakeFiles/boo.dir/main.cpp.o	d1989db140543051
 0	22	1763062060653847246	CMakeFiles/foo.dir/foo.cpp.o	fc253a3f9f79444
 22	69	1763062060702487000	libfoo.a	c2914be8eae174c5
+=======
+0	73	1763057972140053710	CMakeFiles/foo.dir/foo.cpp.o	fc253a3f9f79444
+0	75	1763057972140051919	CMakeFiles/boo.dir/main.cpp.o	d1989db140543051
+74	143	1763057972210707000	libfoo.a	c2914be8eae174c5
+>>>>>>> 59580f2e (Refactored Project files.)

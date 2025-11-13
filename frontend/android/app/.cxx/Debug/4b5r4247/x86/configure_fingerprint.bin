@@ -2,6 +2,7 @@ C/C++ Structured Logx
 v
 t/Users/lib-user/Desktop/Repository/group01/frontend/android/app/.cxx/Debug/4b5r4247/x86/additional_project_files.txtC
 A
+<<<<<<< HEAD
 ?com.android.build.gradle.internal.cxx.io.EncodedFileFingerPrint	ï¿½ï¿½ï¿½ï¿½ï¿½3ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½3u
 s
 q/Users/lib-user/Desktop/Repository/group01/frontend/android/app/.cxx/Debug/4b5r4247/x86/android_gradle_build.json	ï¿½ï¿½ï¿½ï¿½ï¿½3ï¿½& ï¿½ï¿½ï¿½ï¿½ï¿½3z
@@ -36,3 +37,38 @@ y/Users/lib-user/Desktop/Repository/group01/frontend/node_modules/react-native-s
 ï¿½/Users/lib-user/Desktop/Repository/group01/frontend/node_modules/react-native-vector-icons/android/build/generated/source/codegen/jni/CMakeLists.txt	ï¿½ï¿½ï¿½ï¿½ï¿½3ï¿½ ï¿½ï¿½ï¿½ï¿½3ï¿½
 ï¿½
 ï¿½/Users/lib-user/Desktop/Repository/group01/frontend/node_modules/react-native/ReactAndroid/cmake-utils/default-app-setup/CMakeLists.txt	ï¿½ï¿½ï¿½ï¿½ï¿½3ï¿½ Ú¬ï¿½ï¿½3
+=======
+?com.android.build.gradle.internal.cxx.io.EncodedFileFingerPrint	”žíó§3· íÃó§3u
+s
+q/Users/lib-user/Desktop/Repository/group01/frontend/android/app/.cxx/Debug/4b5r4247/x86/android_gradle_build.json	”žíó§3ø& žíÃó§3z
+x
+v/Users/lib-user/Desktop/Repository/group01/frontend/android/app/.cxx/Debug/4b5r4247/x86/android_gradle_build_mini.json	”žíó§3‚# §íÃó§3g
+e
+c/Users/lib-user/Desktop/Repository/group01/frontend/android/app/.cxx/Debug/4b5r4247/x86/build.ninja	”žíó§3½±
+ ùìÃó§3k
+i
+g/Users/lib-user/Desktop/Repository/group01/frontend/android/app/.cxx/Debug/4b5r4247/x86/build.ninja.txt	”žíó§3p
+n
+l/Users/lib-user/Desktop/Repository/group01/frontend/android/app/.cxx/Debug/4b5r4247/x86/build_file_index.txt	”žíó§3² Õ¦ïò§3q
+o
+m/Users/lib-user/Desktop/Repository/group01/frontend/android/app/.cxx/Debug/4b5r4247/x86/compile_commands.json	”žíó§3— øìÃó§3u
+s
+q/Users/lib-user/Desktop/Repository/group01/frontend/android/app/.cxx/Debug/4b5r4247/x86/compile_commands.json.bin	”žíó§3	‡¶ øìÃó§3{
+y
+w/Users/lib-user/Desktop/Repository/group01/frontend/android/app/.cxx/Debug/4b5r4247/x86/metadata_generation_command.txt	”žíó§3
+Ë Ô¦ïò§3n
+l
+j/Users/lib-user/Desktop/Repository/group01/frontend/android/app/.cxx/Debug/4b5r4247/x86/prefab_config.json	”žíó§3Ê Õ¦ïò§3s
+q
+o/Users/lib-user/Desktop/Repository/group01/frontend/android/app/.cxx/Debug/4b5r4247/x86/symbol_folder_index.txt	”žíó§3n Õ¦ïò§3
+š
+—/Users/lib-user/Desktop/Repository/group01/frontend/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt	•žíó§3¾ ì•¹ó§3‰
+†
+ƒ/Users/lib-user/Desktop/Repository/group01/frontend/node_modules/react-native-safe-area-context/android/src/main/jni/CMakeLists.txt	•žíó§3Ç äž ò§3}
+{
+y/Users/lib-user/Desktop/Repository/group01/frontend/node_modules/react-native-screens/android/src/main/jni/CMakeLists.txt	•žíó§3² õ© ò§3š
+—
+”/Users/lib-user/Desktop/Repository/group01/frontend/node_modules/react-native-vector-icons/android/build/generated/source/codegen/jni/CMakeLists.txt	•žíó§3” å›¹ó§3
+Š
+‡/Users/lib-user/Desktop/Repository/group01/frontend/node_modules/react-native/ReactAndroid/cmake-utils/default-app-setup/CMakeLists.txt	•žíó§3ð Ú¬ ò§3
+>>>>>>> 59580f2e (Refactored Project files.)
