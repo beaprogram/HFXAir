@@ -5,6 +5,8 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import ArrivalsScreen from './tabs/ArrivalsScreen';
 import DeparturesScreen from './tabs/DeparturesScreen';
 import ShopsScreen from './tabs/ShopsScreen';
+import ParkingScreen from './tabs/ParkingScreen';
+import AboutScreen from './tabs/AboutScreen';
 
 interface HomeScreenProps {
   userData?: {ticketNumber: string, flightNumber: string} | null;
@@ -50,20 +52,10 @@ export default function HomeScreen({ userData, onLogout }: HomeScreenProps) {
         );
       
       case 'parking':
-        return (
-          <View style={styles.emptyContent}>
-            <FontAwesome name="car" size={48} color="#ccc" />
-            <Text style={styles.emptyText}>Parking - Coming Soon</Text>
-          </View>
-        );
-      
+        return <ParkingScreen showHeader={false} />;
+
       case 'about':
-        return (
-          <View style={styles.emptyContent}>
-            <FontAwesome name="info-circle" size={48} color="#ccc" />
-            <Text style={styles.emptyText}>About - Coming Soon</Text>
-          </View>
-        );
+        return <AboutScreen showHeader={false} />;
       
       default:
         return (
