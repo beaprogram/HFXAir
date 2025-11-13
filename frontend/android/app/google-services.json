@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "783817172497",
+    "project_id": "frontend-f60f3",
+    "storage_bucket": "frontend-f60f3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:783817172497:android:3157b8516ce83293b8b3b0",
+        "android_client_info": {
+          "package_name": "com.frontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKaWZgvsCIrg1w8dQTCgnsfNjUh4tstrU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
