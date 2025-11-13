@@ -23,13 +23,10 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
     setLoading(true);
     try {
-      console.log(" ==> ", trimmedFlight, trimmedTicket)
       const response = await axiosInstance.post('/login', {
         flight_number: trimmedFlight,
         ticket_number: trimmedTicket,
       });
-
-      console.log("response ==> ", response?.data)
 
       if (response.data.token) {
         setAuthToken(response.data.token);
