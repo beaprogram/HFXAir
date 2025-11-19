@@ -15,6 +15,9 @@ import { PushNotificationBanner } from "../../components/PushNotificationBanner"
 import { FlightHeader } from "../../components/FlightHeader";
 import { useEffect } from "react";
 import axios from "axios";
+import { PermissionsAndroid } from 'react-native';
+import messaging from '@react-native-firebase/messaging';
+import axiosInstance from "../../services/axiosProvider";
 
 interface Flight {
   id: string;
@@ -90,8 +93,43 @@ export default function ArrivalsScreen({
     }
   }
 
+  const requestPermisssion = async () =>{
+    try{
+      await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS)
+    } catch(error) {
+      console.log(error)
+    }
+  }
+
+  const subscribeToFlight = async (flightId: string) => {
+  try {
+    const fcmToken = await messaging().getToken();
+    
+    const response = await axiosInstance.post('/subscribe', {
+      flight_id: flightId,
+      expo_token: fcmToken
+    });
+    
+    console.log(response?.data?.message);
+  } catch (error) {
+    console.log('Subscription error:', error);
+    throw error;
+  }
+};
+
+const handleNotificationToggle = async (flightId: string) => {
+  const flight = flights.find(f => f.id === flightId);
+  
+  if (flight && !flight.notificationsEnabled) {
+    await subscribeToFlight(flightId);
+  }
+  
+  toggleNotification(flightId);
+};
+
   useEffect(()=>{
     getFlightDetails()
+    requestPermisssion()
   },[])
 
   useEffect(() => {
@@ -152,7 +190,7 @@ export default function ArrivalsScreen({
                     styles.bellButton,
                     flight.notificationsEnabled && styles.bellButtonActive,
                   ]}
-                  onPress={() => toggleNotification(flight.id)}
+                  onPress={() => handleNotificationToggle(flight.id)}
                 >
                   <FontAwesome
                     name={flight.notificationsEnabled ? "bell" : "bell-o"}
