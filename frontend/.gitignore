@@ -20,6 +20,29 @@ ios/build/
 build/
 dist/
 
+
+# Android
+android/app/build/
+android/build/
+android/.gradle/
+android/app/release/
+android/app/debug/
+android/gradle/
+*.apk
+*.ap_
+*.aab
+
+# Gradle
+.gradle/
+build/
+local.properties
+android/gradlew
+android/gradlew.bat
+android/gradle.properties
+
+# Metro
+.metro-health-check*
+
 # iOS
 ios/Pods/
 ios/Podfile.lock
