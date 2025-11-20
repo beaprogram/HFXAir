@@ -1,12 +1,3 @@
-
-```
-
----
-
-## 📄 **21. .gitignore**
-
-**Path:** `frontend/.gitignore`
-```
 # Dependencies
 node_modules/
 npm-debug.log*
@@ -17,6 +8,7 @@ yarn-error.log*
 android/app/build/
 android/app/.cxx/
 android/build/
+android/.gradle/
 ios/build/
 build/
 dist/
