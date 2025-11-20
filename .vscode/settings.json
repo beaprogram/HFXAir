@@ -1,0 +1,5 @@
+{
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.import.gradle.enabled": false,
+    "java.configuration.updateBuildConfiguration": "disabled"
+}
