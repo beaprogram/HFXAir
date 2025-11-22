@@ -290,7 +290,7 @@ def test_get_shop_hours_success(client, monkeypatch):
         "exception_hours": []
     }
     
-    def fake_get_shop_hours(shop_id, start_date=None, end_date=None):
+    def fake_get_shop_hours(shop_id):
         assert shop_id == 1
         return sample_hours
     
@@ -306,47 +306,9 @@ def test_get_shop_hours_success(client, monkeypatch):
     assert len(data["weekly_hours"]) == 1
 
 
-def test_get_shop_hours_with_start_date(client, monkeypatch):
-    """Test GET /shops/<shop_id>/hours?start_date=2024-12-01"""
-    def fake_get_shop_hours(shop_id, start_date=None, end_date=None):
-        assert shop_id == 1
-        assert start_date == "2024-12-01"
-        assert end_date is None
-        return {
-            "shop_id": 1,
-            "weekly_hours": [],
-            "exception_hours": []
-        }
-    
-    import flask_app.shop as shop
-    monkeypatch.setattr(shop, "get_shop_hours", fake_get_shop_hours)
-    
-    response = client.get("/shops/1/hours?start_date=2024-12-01")
-    assert response.status_code == 200
-
-
-def test_get_shop_hours_with_date_range(client, monkeypatch):
-    """Test GET /shops/<shop_id>/hours?start_date=2024-12-01&end_date=2024-12-31"""
-    def fake_get_shop_hours(shop_id, start_date=None, end_date=None):
-        assert shop_id == 1
-        assert start_date == "2024-12-01"
-        assert end_date == "2024-12-31"
-        return {
-            "shop_id": 1,
-            "weekly_hours": [],
-            "exception_hours": []
-        }
-    
-    import flask_app.shop as shop
-    monkeypatch.setattr(shop, "get_shop_hours", fake_get_shop_hours)
-    
-    response = client.get("/shops/1/hours?start_date=2024-12-01&end_date=2024-12-31")
-    assert response.status_code == 200
-
-
 def test_get_shop_hours_not_found(client, monkeypatch):
     """Test GET /shops/<shop_id>/hours - shop not found"""
-    def fake_get_shop_hours(shop_id, start_date=None, end_date=None):
+    def fake_get_shop_hours(shop_id):
         assert shop_id == 999
         return None
     

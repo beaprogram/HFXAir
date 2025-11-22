@@ -323,7 +323,7 @@ def get_shop_by_id(shop_id):
         return None
 
 
-def get_shop_hours(shop_id, start_date=None, end_date=None):
+def get_shop_hours(shop_id):
     """Get shop hours"""
     try:
         conn = get_db_connection()
@@ -368,20 +368,10 @@ def get_shop_hours(shop_id, start_date=None, end_date=None):
             SELECT exception_date, open_time, close_time, is_closed, reason
             FROM shop_hour_exceptions
             WHERE shop_id = %s
+            ORDER BY exception_date DESC
         """
-        params = [shop_id]
         
-        if start_date:
-            exception_query += " AND exception_date >= %s"
-            params.append(start_date)
-        
-        if end_date:
-            exception_query += " AND exception_date <= %s"
-            params.append(end_date)
-        
-        exception_query += " ORDER BY exception_date DESC"
-        
-        cur.execute(exception_query, params)
+        cur.execute(exception_query, (shop_id,))
         exception_rows = cur.fetchall()
         
         exception_hours = []
@@ -763,10 +753,7 @@ def get_shop_details(shop_id):
 @app.get("/shops/<int:shop_id>/hours")
 def get_shop_hours_route(shop_id):
     """GET /shops/<shop_id>/hours - Get shop hours"""
-    start_date = request.args.get("start_date")
-    end_date = request.args.get("end_date")
-    
-    hours = get_shop_hours(shop_id, start_date=start_date, end_date=end_date)
+    hours = get_shop_hours(shop_id)
     if hours is None:
         return jsonify({"error": "Shop not found"}), 404
     return jsonify(hours), 200
