@@ -38,7 +38,7 @@ def get_shop_catalog(shop_id, include_items=True):
 
 
 def get_shop_items(shop_id, search=None, category_id=None, min_price=None, 
-                   max_price=None, availability=None, sort=None, page=1, per_page=20):
+                   max_price=None, availability=None, sort=None):
     """Get shop items with filtering"""
     return None
 
@@ -121,20 +121,25 @@ def list_shop_items(shop_id):
     max_price = request.args.get("max_price")
     availability = request.args.get("availability")
     sort = request.args.get("sort")
-    page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 20, type=int)
+    
+    # Convert min_price to float if provided
+    if min_price is not None:
+        try:
+            min_price = float(min_price)
+        except ValueError:
+            min_price = None
+    
+    # Convert max_price to float if provided
+    if max_price is not None:
+        try:
+            max_price = float(max_price)
+        except ValueError:
+            max_price = None
     
     # Validate price range
     if min_price is not None and max_price is not None:
-        try:
-            min_price_float = float(min_price)
-            max_price_float = float(max_price)
-            if min_price_float > max_price_float:
-                return jsonify({"error": "Invalid price range: min_price cannot be greater than max_price"}), 400
-            min_price = min_price_float
-            max_price = max_price_float
-        except ValueError:
-            pass
+        if min_price > max_price:
+            return jsonify({"error": "Invalid price range: min_price cannot be greater than max_price"}), 400
     
     # Convert category_id to int if provided
     if category_id is not None:
@@ -145,8 +150,7 @@ def list_shop_items(shop_id):
     
     result = get_shop_items(shop_id, search=search, category_id=category_id,
                            min_price=min_price, max_price=max_price,
-                           availability=availability, sort=sort,
-                           page=page, per_page=per_page)
+                           availability=availability, sort=sort)
     if result is None:
         return jsonify({"error": "Shop not found"}), 404
     return jsonify(result), 200
