@@ -28,14 +28,14 @@ def test_get_shops_list_all(client, monkeypatch):
         }
     ]
     
-    def fake_get_shops():
+    def fake_get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None):
         return {
             "shops": sample_shops,
             "total": 1,
             "filters_applied": {}
         }
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shops", fake_get_shops)
     
     response = client.get("/shops")
@@ -58,7 +58,7 @@ def test_get_shops_with_category_filter(client, monkeypatch):
             "filters_applied": {"category": "Food & Beverage"}
         }
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shops", fake_get_shops)
     
     response = client.get("/shops?category=Food%20%26%20Beverage")
@@ -77,7 +77,7 @@ def test_get_shops_with_open_now_filter(client, monkeypatch):
             "filters_applied": {"open_now": True}
         }
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shops", fake_get_shops)
     
     response = client.get("/shops?open_now=true")
@@ -94,7 +94,7 @@ def test_get_shops_with_sorting(client, monkeypatch):
             "filters_applied": {"sort": "status"}
         }
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shops", fake_get_shops)
     
     response = client.get("/shops?sort=status")
@@ -111,7 +111,7 @@ def test_get_shops_with_terminal_filter(client, monkeypatch):
             "filters_applied": {"terminal": "Terminal 1"}
         }
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shops", fake_get_shops)
     
     response = client.get("/shops?terminal=Terminal%201")
@@ -128,7 +128,7 @@ def test_get_shops_with_gate_filter(client, monkeypatch):
             "filters_applied": {"gate": "Gate A5"}
         }
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shops", fake_get_shops)
     
     response = client.get("/shops?gate=Gate%20A5")
@@ -164,7 +164,7 @@ def test_get_shop_by_id_success(client, monkeypatch):
         assert shop_id == 1
         return sample_shop
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_by_id", fake_get_shop_by_id)
     
     response = client.get("/shops/1")
@@ -182,7 +182,7 @@ def test_get_shop_by_id_not_found(client, monkeypatch):
         assert shop_id == 999
         return None
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_by_id", fake_get_shop_by_id)
     
     response = client.get("/shops/999")
@@ -212,7 +212,7 @@ def test_get_shop_hours_success(client, monkeypatch):
         assert shop_id == 1
         return sample_hours
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_hours", fake_get_shop_hours)
     
     response = client.get("/shops/1/hours")
@@ -235,7 +235,7 @@ def test_get_shop_hours_with_date_range(client, monkeypatch):
             "exception_hours": []
         }
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_hours", fake_get_shop_hours)
     
     response = client.get("/shops/1/hours?start_date=2024-12-01&end_date=2024-12-31")
@@ -248,7 +248,7 @@ def test_get_shop_hours_not_found(client, monkeypatch):
         assert shop_id == 999
         return None
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_hours", fake_get_shop_hours)
     
     response = client.get("/shops/999/hours")
@@ -267,7 +267,7 @@ def test_get_shop_categories(client, monkeypatch):
     def fake_get_shop_categories():
         return sample_categories
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_categories", fake_get_shop_categories)
     
     response = client.get("/shops/categories")
@@ -304,7 +304,7 @@ def test_get_shop_catalog_success(client, monkeypatch):
         assert include_items is True
         return sample_catalog
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_catalog", fake_get_shop_catalog)
     
     response = client.get("/shops/1/catalog?include_items=true")
@@ -325,7 +325,7 @@ def test_get_shop_catalog_without_items(client, monkeypatch):
             "categories": []
         }
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_catalog", fake_get_shop_catalog)
     
     response = client.get("/shops/1/catalog?include_items=false")
@@ -338,7 +338,7 @@ def test_get_shop_catalog_not_found(client, monkeypatch):
         assert shop_id == 999
         return None
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_catalog", fake_get_shop_catalog)
     
     response = client.get("/shops/999/catalog")
@@ -373,7 +373,7 @@ def test_get_shop_items_success(client, monkeypatch):
         assert shop_id == 1
         return sample_items
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_items", fake_get_shop_items)
     
     response = client.get("/shops/1/items")
@@ -397,7 +397,7 @@ def test_get_shop_items_with_search(client, monkeypatch):
             "pagination": {"page": 1, "per_page": 20, "total_items": 0, "total_pages": 0, "has_next": False, "has_prev": False}
         }
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_items", fake_get_shop_items)
     
     response = client.get("/shops/1/items?search=coffee")
@@ -418,7 +418,7 @@ def test_get_shop_items_with_price_range(client, monkeypatch):
             "pagination": {"page": 1, "per_page": 20, "total_items": 0, "total_pages": 0, "has_next": False, "has_prev": False}
         }
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_items", fake_get_shop_items)
     
     response = client.get("/shops/1/items?min_price=2.00&max_price=5.00")
@@ -446,7 +446,7 @@ def test_get_shop_items_with_availability(client, monkeypatch):
             "pagination": {"page": 1, "per_page": 20, "total_items": 0, "total_pages": 0, "has_next": False, "has_prev": False}
         }
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_items", fake_get_shop_items)
     
     response = client.get("/shops/1/items?availability=in_stock")
@@ -466,7 +466,7 @@ def test_get_shop_items_with_sorting(client, monkeypatch):
             "pagination": {"page": 1, "per_page": 20, "total_items": 0, "total_pages": 0, "has_next": False, "has_prev": False}
         }
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_items", fake_get_shop_items)
     
     response = client.get("/shops/1/items?sort=price_asc")
@@ -487,7 +487,7 @@ def test_get_shop_items_with_pagination(client, monkeypatch):
             "pagination": {"page": 2, "per_page": 10, "total_items": 0, "total_pages": 0, "has_next": False, "has_prev": True}
         }
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_items", fake_get_shop_items)
     
     response = client.get("/shops/1/items?page=2&per_page=10")
@@ -501,7 +501,7 @@ def test_get_shop_items_not_found(client, monkeypatch):
         assert shop_id == 999
         return None
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_items", fake_get_shop_items)
     
     response = client.get("/shops/999/items")
@@ -529,7 +529,7 @@ def test_get_item_by_id_success(client, monkeypatch):
         assert item_id == 1
         return sample_item
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_item_by_id", fake_get_item_by_id)
     
     response = client.get("/items/1")
@@ -547,7 +547,7 @@ def test_get_item_by_id_not_found(client, monkeypatch):
         assert item_id == 999
         return None
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_item_by_id", fake_get_item_by_id)
     
     response = client.get("/items/999")
@@ -570,7 +570,7 @@ def test_get_shop_item_categories(client, monkeypatch):
         assert shop_id == 1
         return sample_categories
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_item_categories", fake_get_shop_item_categories)
     
     response = client.get("/shops/1/categories")
@@ -587,7 +587,7 @@ def test_get_shop_item_categories_not_found(client, monkeypatch):
         assert shop_id == 999
         return None
     
-    import shop
+    import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shop_item_categories", fake_get_shop_item_categories)
     
     response = client.get("/shops/999/categories")

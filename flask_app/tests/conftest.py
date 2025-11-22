@@ -8,6 +8,8 @@ if group01_dir not in sys.path:
     sys.path.insert(0, group01_dir)
 
 from flask_app.app import app
+# Import shop module to register routes
+from flask_app import shop
 
 @pytest.fixture
 def client():
