@@ -8,8 +8,8 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from pathlib import Path
 
-from .auth import require_auth
-from .helper.helper_firebase_notification import send_push
+from flask_app.auth import require_auth
+from flask_app.helper.helper_firebase_notification import send_push
 
 
 # Load environment variables from .env file
@@ -381,3 +381,8 @@ def save_subscription(ticket_no, flight_id, expo_token):
     conn.commit()
     cur.close()
     conn.close()
+
+
+# Import shop routes at the end to avoid circular import
+# The app object must be created first before shop.py can import it
+import flask_app.shop  # noqa: E402

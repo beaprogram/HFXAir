@@ -2,10 +2,14 @@ import pytest
 import sys
 import os
 
-# Add the parent directory to the path so we can import app
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add the group01 directory (parent of flask_app) to the path so we can import flask_app package
+group01_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if group01_dir not in sys.path:
+    sys.path.insert(0, group01_dir)
 
-from app import app
+from flask_app.app import app
+# Import shop module to register routes
+from flask_app import shop
 
 @pytest.fixture
 def client():
