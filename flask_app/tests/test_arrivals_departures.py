@@ -7,7 +7,7 @@ def test_get_arrivals(client, monkeypatch):
     def fake_get_arrivals():
         return arrivals
 
-    import app
+    import flask_app.app as app
     monkeypatch.setattr(app, "get_arrivals", fake_get_arrivals)
 
     res = client.get("/flights/arrivals")
@@ -24,7 +24,7 @@ def test_get_departures(client, monkeypatch):
     def fake_get_departures():
         return departures
 
-    import app
+    import flask_app.app as app
     monkeypatch.setattr(app, "get_departures", fake_get_departures)
 
     res = client.get("/flights/departures")

@@ -8,8 +8,8 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from pathlib import Path
 
-from .auth import require_auth
-from .helper.helper_firebase_notification import send_push
+from flask_app.auth import require_auth
+from flask_app.helper.helper_firebase_notification import send_push
 
 
 # Load environment variables from .env file
