@@ -1,5 +1,18 @@
 stages:
+  - test
   - deploy
+
+test:
+  stage: test
+  tags:
+    - vm-runner
+  script:
+    - cd /home/student/HFXAIR/group01/flask_app
+    - source /home/student/venv/bin/activate
+    - pip install -r requirements.txt --quiet
+    - pytest tests/ -v --tb=short
+  only:
+    - Test-ci/cd-pipeline
 
 deploy:
   stage: deploy
@@ -13,3 +26,5 @@ deploy:
     - echo "Deployment complete!"
   only:
     - Test-ci/cd-pipeline
+  needs:
+    - test
