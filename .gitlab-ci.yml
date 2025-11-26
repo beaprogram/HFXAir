@@ -12,7 +12,7 @@ test:
     - pip install -r requirements.txt --quiet
     - pytest tests/ -v --tb=short
   only:
-    - Test-ci/cd-pipeline
+    - main
 
 deploy:
   stage: deploy
@@ -25,6 +25,6 @@ deploy:
     - sudo systemctl restart hfxair.service
     - echo "Deployment complete!"
   only:
-    - Test-ci/cd-pipeline
+    - main
   needs:
     - test
