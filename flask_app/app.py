@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 from flask_app.auth import require_auth
-from flask_app.helper.helper_firebase_notification import send_push
+from flask_app.helper.helper_firebase_notification import send_push, notify_subscribers
+from flask_app.helper.helper_cron_jobs import start_background_jobs
 
 
 # Load environment variables from .env file
@@ -28,6 +29,9 @@ app.config['DEBUG'] = True
 TOKEN_EXPIRY_HOURS = 24
 SECRET = "hfxair-app-secret"
 
+# Initialize background cron jobs
+scheduler = start_background_jobs(app)
+
 
 def get_db_connection():
 
@@ -44,11 +48,23 @@ def get_db_connection():
 @app.post("/send-notification")
 def send_notification():
     data = request.json
+    # Accept either a single token or a ticket_no/flight_id to notify subscribers
     token = data.get("token")
+    ticket_no = data.get("ticket_no")
+    flight_id = data.get("flight_id")
     title = data.get("title", "Default title")
     body = data.get("body", "Default body")
-    success = send_push(token, title, body)
-    return jsonify({"success": success})
+
+    if token:
+        success = send_push(token, title, body)
+        return jsonify({"success": success}), (200 if success else 500)
+
+    # If ticket_no or flight_id provided, send to all subscribers
+    if ticket_no or flight_id:
+        summary = notify_subscribers(ticket_no=ticket_no, flight_id=flight_id, title=title, body=body)
+        return jsonify({"summary": summary}), 200
+
+    return jsonify({"error": "Provide 'token' or 'ticket_no'/'flight_id' in request body"}), 400
 
 
 @app.route('/')
