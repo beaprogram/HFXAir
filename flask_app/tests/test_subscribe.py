@@ -1,5 +1,5 @@
 import jwt
-from app import SECRET
+from flask_app.app import SECRET
 
 def test_subscribe_requires_auth(client):
     # no token
@@ -14,7 +14,7 @@ def test_subscribe_success(client, monkeypatch):
     def fake_save_subscription(ticket_no, flight_id, expo_token):
         called["used"] = True
 
-    import app
+    import flask_app.app as app
     monkeypatch.setattr(app, "save_subscription", fake_save_subscription)
 
     token = jwt.encode({"ticket_no": "TCK123", "flight_no": "AC123"}, SECRET, algorithm="HS256")

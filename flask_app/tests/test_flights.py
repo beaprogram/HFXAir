@@ -8,7 +8,7 @@ def test_get_flights_returns_list(client, monkeypatch):
     def fake_get_all_flights():
         return sample_flights
 
-    import app
+    import flask_app.app as app
     monkeypatch.setattr(app, "get_all_flights", fake_get_all_flights)
 
     response = client.get("/flights")

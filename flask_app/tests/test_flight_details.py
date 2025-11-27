@@ -11,7 +11,7 @@ def test_get_flight_details(client, monkeypatch):
         assert flight_id == 14
         return sample_flight
 
-    import app
+    import flask_app.app as app
     monkeypatch.setattr(app, "get_flight_by_id", fake_get_flight_by_id)
 
     response = client.get("/flights/14")
