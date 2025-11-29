@@ -1,7 +1,9 @@
 stages:
   - test
   - deploy
+  - code-quality
 
+# ==================== TEST ====================
 test:
   stage: test
   tags:
@@ -12,8 +14,10 @@ test:
     - pip install -r requirements.txt --quiet
     - pytest tests/ -v --tb=short
   only:
+    - code-quality
     - main
 
+# ==================== DEPLOY ====================
 deploy:
   stage: deploy
   tags:
@@ -25,6 +29,43 @@ deploy:
     - sudo systemctl restart hfxair.service
     - echo "Deployment complete!"
   only:
+    - code-quality
     - main
   needs:
     - test
+
+# ==================== CODE QUALITY ====================
+run-dpy:
+  stage: code-quality
+  tags:
+    - vm-runner
+  script:
+    - echo "Downloading DPy..."
+    - cd /home/student
+    - wget -q https://zenodo.org/records/14283946/files/rep_package_DPy.zip -O DPy.zip
+    - unzip -o DPy.zip
+    - chmod +x rep_package_DPy/DPy/DPy-ubuntu-v0.0.7/DPy
+    - echo "Running DPy on flask_app..."
+    - mkdir -p /home/student/HFXAIR/group01/smells/
+    - ./rep_package_DPy/DPy/DPy-ubuntu-v0.0.7/DPy analyze -i /home/student/HFXAIR/group01/flask_app -o /home/student/HFXAIR/group01/smells/ -f csv
+    - echo "DPy analysis complete!"
+    - ls -la /home/student/HFXAIR/group01/smells/
+  only:
+    - code-quality
+    - main
+  needs:
+    - deploy
+
+submit-dcode:
+  stage: code-quality
+  tags:
+    - vm-runner
+  script:
+    - source /home/student/venv/bin/activate
+    - pip install requests --quiet
+    - python3 /home/student/HFXAIR/group01/.quality/push_to_dcode.py $DCODE_PROJECT_ID $DCODE_API_KEY /home/student/HFXAIR/group01/smells/ $CI_COMMIT_SHA
+  only:
+    - code-quality
+    - main
+  needs:
+    - run-dpy
