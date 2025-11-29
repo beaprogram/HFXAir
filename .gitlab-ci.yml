@@ -1,7 +1,9 @@
 stages:
   - test
   - deploy
+  - code-quality
 
+# ==================== TEST ====================
 test:
   stage: test
   tags:
@@ -14,6 +16,7 @@ test:
   only:
     - main
 
+# ==================== DEPLOY ====================
 deploy:
   stage: deploy
   tags:
@@ -28,3 +31,42 @@ deploy:
     - main
   needs:
     - test
+
+# ==================== CODE QUALITY ====================
+run-dpy:
+  stage: code-quality
+  image: python:3.10
+  tags:
+    - dalfcs_docker_kvm
+  script:
+    - echo "Downloading DPy..."
+    - wget -q https://www.designite-tools.com/assets/DPy-linux.zip -O DPy.zip
+    - python3 -m zipfile -e DPy.zip .
+    - chmod +x DPy
+    - echo "Running DPy on flask_app..."
+    - mkdir -p smells/
+    - ./DPy analyze -i $CI_PROJECT_DIR/flask_app -o $CI_PROJECT_DIR/smells/ -f csv
+    - echo "DPy analysis complete!"
+    - ls -la smells/
+  artifacts:
+    paths:
+      - smells/
+  only:
+    - main
+  needs:
+    - deploy
+
+submit-dcode:
+  stage: code-quality
+  image: python:3.10-alpine
+  tags:
+    - dalfcs_docker_kvm
+  dependencies:
+    - run-dpy
+  script:
+    - pip install requests --quiet
+    - python3 $CI_PROJECT_DIR/.quality/push_to_dcode.py $DCODE_PROJECT_ID $DCODE_API_KEY $CI_PROJECT_DIR/smells/ $CI_COMMIT_SHA
+  only:
+    - main
+  needs:
+    - run-dpy
