@@ -37,19 +37,22 @@ deploy:
 # ==================== CODE QUALITY ====================
 run-dpy:
   stage: code-quality
+  image: python:3.10
   tags:
-    - vm-runner
+    - dalfcs_docker_kvm
   script:
     - echo "Downloading DPy..."
-    - cd /home/student
     - wget -q https://www.designite-tools.com/assets/DPy-linux.zip -O DPy.zip
     - python3 -m zipfile -e DPy.zip .
     - chmod +x DPy
     - echo "Running DPy on flask_app..."
-    - mkdir -p /home/student/HFXAIR/group01/smells/
-    - ./DPy analyze -i /home/student/HFXAIR/group01/flask_app -o /home/student/HFXAIR/group01/smells/ -f csv
+    - mkdir -p smells/
+    - ./DPy analyze -i $CI_PROJECT_DIR/flask_app -o $CI_PROJECT_DIR/smells/ -f csv
     - echo "DPy analysis complete!"
-    - ls -la /home/student/HFXAIR/group01/smells/
+    - ls -la smells/
+  artifacts:
+    paths:
+      - smells/
   only:
     - code-quality
     - main
@@ -58,12 +61,14 @@ run-dpy:
 
 submit-dcode:
   stage: code-quality
+  image: python:3.10-alpine
   tags:
-    - vm-runner
+    - dalfcs_docker_kvm
+  dependencies:
+    - run-dpy
   script:
-    - source /home/student/venv/bin/activate
     - pip install requests --quiet
-    - python3 /home/student/HFXAIR/group01/.quality/push_to_dcode.py $DCODE_PROJECT_ID $DCODE_API_KEY /home/student/HFXAIR/group01/smells/ $CI_COMMIT_SHA
+    - python3 $CI_PROJECT_DIR/.quality/push_to_dcode.py $DCODE_PROJECT_ID $DCODE_API_KEY $CI_PROJECT_DIR/smells/ $CI_COMMIT_SHA
   only:
     - code-quality
     - main
