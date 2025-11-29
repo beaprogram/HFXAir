@@ -14,7 +14,7 @@ test:
     - pip install -r requirements.txt --quiet
     - pytest tests/ -v --tb=short
   only:
-    - Test-ci/cd-pipeline
+    - code-quality
     - main
 
 # ==================== DEPLOY ====================
@@ -29,7 +29,7 @@ deploy:
     - sudo systemctl restart hfxair.service
     - echo "Deployment complete!"
   only:
-    - Test-ci/cd-pipeline
+    - code-quality
     - main
   needs:
     - test
@@ -51,7 +51,7 @@ run-dpy:
     - echo "DPy analysis complete!"
     - ls -la /home/student/HFXAIR/group01/smells/
   only:
-    - Test-ci/cd-pipeline
+    - code-quality
     - main
   needs:
     - deploy
@@ -65,7 +65,7 @@ submit-dcode:
     - pip install requests --quiet
     - python3 /home/student/HFXAIR/group01/.quality/push_to_dcode.py $DCODE_PROJECT_ID $DCODE_API_KEY /home/student/HFXAIR/group01/smells/ $CI_COMMIT_SHA
   only:
-    - Test-ci/cd-pipeline
+    - code-quality
     - main
   needs:
     - run-dpy
