@@ -43,7 +43,7 @@ run-dpy:
     - echo "Downloading DPy..."
     - cd /home/student
     - wget -q https://www.designite-tools.com/assets/DPy-linux.zip -O DPy.zip
-    - unzip -o DPy.zip
+    - python3 -m zipfile -e DPy.zip .
     - chmod +x DPy
     - echo "Running DPy on flask_app..."
     - mkdir -p /home/student/HFXAIR/group01/smells/
