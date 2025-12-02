@@ -3,7 +3,7 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 let authToken: string | null = null;
 
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: 'http://172.17.1.217:5000',
+  baseURL: 'http://172.17.1.217',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
