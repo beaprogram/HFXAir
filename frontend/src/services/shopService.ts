@@ -7,13 +7,16 @@ import {
   ApiItem,
   ShopsApiResponse,
   ShopItemsApiResponse,
+  ShopCategoriesApiResponse,
+  ShopItemCategoriesApiResponse,
   AvailabilityStatus,
 } from '../types/shops';
 import { mockShops, mockItems } from '../data/mockShopsData';
 import { generatePickupCode, calculateExpiryTime, getBookingStatus } from '../utils/shopHelpers';
+import axiosProvider from './axiosProvider';
 
-const USE_MOCK_DATA = true;
-const API_BASE_URL = 'http://172.171.1.217';
+const USE_MOCK_DATA = false;
+const API_BASE_URL = '';
 
 const ENDPOINTS = {
   SHOPS: `${API_BASE_URL}/shops`,
@@ -128,7 +131,9 @@ export const ShopService = {
         ? `${ENDPOINTS.SHOPS}?${queryParams.toString()}`
         : ENDPOINTS.SHOPS;
 
-      return { data: [], error: null, success: true };
+      const response = await axiosProvider.get<ShopsApiResponse>(url);
+      const shops = response.data.shops.map(transformShop);
+      return { data: shops, error: null, success: true };
     } catch (error: any) {
       return {
         data: null,
@@ -149,7 +154,9 @@ export const ShopService = {
     }
 
     try {
-      return { data: null, error: 'Not implemented', success: false };
+      const response = await axiosProvider.get<ApiShop>(ENDPOINTS.SHOP_BY_ID(shopId));
+      const shop = transformShop(response.data);
+      return { data: shop, error: null, success: true };
     } catch (error: any) {
       return {
         data: null,
@@ -167,7 +174,9 @@ export const ShopService = {
     }
 
     try {
-      return { data: ['All'], error: null, success: true };
+      const response = await axiosProvider.get<ShopCategoriesApiResponse>(ENDPOINTS.SHOP_CATEGORIES);
+      const categories = response.data.categories.map(c => c.name);
+      return { data: ['All', ...categories], error: null, success: true };
     } catch (error: any) {
       return {
         data: null,
@@ -234,7 +243,9 @@ export const ItemService = {
         ? `${ENDPOINTS.SHOP_ITEMS(shopId)}?${queryParams.toString()}`
         : ENDPOINTS.SHOP_ITEMS(shopId);
 
-      return { data: [], error: null, success: true };
+      const response = await axiosProvider.get<ShopItemsApiResponse>(url);
+      const items = response.data.items.map(item => transformItem(item, shopId));
+      return { data: items, error: null, success: true };
     } catch (error: any) {
       return {
         data: null,
@@ -255,7 +266,9 @@ export const ItemService = {
     }
 
     try {
-      return { data: null, error: 'Not implemented', success: false };
+      const response = await axiosProvider.get<ApiItem>(ENDPOINTS.ITEM_BY_ID(itemId));
+      const item = transformItem(response.data, shopId || '');
+      return { data: item, error: null, success: true };
     } catch (error: any) {
       return {
         data: null,
@@ -274,7 +287,11 @@ export const ItemService = {
     }
 
     try {
-      return { data: ['All'], error: null, success: true };
+      const response = await axiosProvider.get<ShopItemCategoriesApiResponse>(
+        ENDPOINTS.SHOP_ITEM_CATEGORIES(shopId)
+      );
+      const categories = response.data.categories.map(c => c.category_name);
+      return { data: ['All', ...categories], error: null, success: true };
     } catch (error: any) {
       return {
         data: null,
@@ -304,7 +321,8 @@ export const BookingService = {
     }
 
     try {
-      return { data: [], error: null, success: true };
+      const response = await axiosProvider.get(ENDPOINTS.BOOKINGS);
+      return { data: response.data, error: null, success: true };
     } catch (error: any) {
       return {
         data: null,
@@ -371,7 +389,13 @@ export const BookingService = {
     }
 
     try {
-      return { data: null, error: 'Not implemented', success: false };
+      const response = await axiosProvider.post(ENDPOINTS.BOOKINGS, {
+        item_id: params.itemId,
+        shop_id: params.shopId,
+        quantity: params.quantity,
+        selected_variants: params.selectedVariants,
+      });
+      return { data: response.data, error: null, success: true };
     } catch (error: any) {
       return {
         data: null,
@@ -410,7 +434,8 @@ export const BookingService = {
     }
 
     try {
-      return { data: null, error: 'Not implemented', success: false };
+      const response = await axiosProvider.post(ENDPOINTS.CANCEL_BOOKING(bookingId));
+      return { data: response.data, error: null, success: true };
     } catch (error: any) {
       return {
         data: null,
@@ -432,5 +457,4 @@ export const BookingService = {
     return { data: 0, error: null, success: true };
   },
 };
-
-const simulateDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const simulateDelay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
