@@ -18,7 +18,7 @@ build:
     - pip install -r requirements.txt
     - python -c "from flask_app.app import app; print('App loads successfully')"
   only:
-    - refactor/shopping-page-components-integration
+    - main
 
 # ==================== TEST ====================
 test:
@@ -31,7 +31,7 @@ test:
     - pip install pytest
     - pytest tests/ -v --tb=short
   only:
-    - refactor/shopping-page-components-integration
+    - main
   needs:
     - build
 
@@ -46,7 +46,7 @@ deploy:
     - sudo systemctl restart hfxair.service
     - echo "Deployment complete!"
   only:
-    - refactor/shopping-page-components-integration
+    - main
   needs:
     - test
 
@@ -70,7 +70,7 @@ run-dpy:
     paths:
       - smells/
   only:
-    - refactor/shopping-page-components-integration
+    - main
   needs:
     - deploy
 
@@ -85,6 +85,6 @@ submit-dcode:
     - pip install requests --quiet
     - python3 $CI_PROJECT_DIR/.quality/push_to_dcode.py $DCODE_PROJECT_ID $DCODE_API_KEY $CI_PROJECT_DIR/smells/ $CI_COMMIT_SHA
   only:
-    - refactor/shopping-page-components-integration
+    - main
   needs:
     - run-dpy
