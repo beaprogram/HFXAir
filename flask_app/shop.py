@@ -566,7 +566,7 @@ def get_shop_items(shop_id, search=None, category_id=None, min_price=None,
             order_by = "ORDER BY i.base_price DESC"
         
         query = f"""
-            SELECT item_id, name, base_price, description, availability
+            SELECT item_id, name, base_price, description, availability, stock_quantity
             FROM items i
             {where_clause}
             {order_by}
@@ -582,7 +582,8 @@ def get_shop_items(shop_id, search=None, category_id=None, min_price=None,
                 "name": name,
                 "base_price": float(price) if price else 0.0,
                 "description": desc,
-                "availability": avail
+                "availability": avail,
+                "stock_quantity": stock_qty
             })
         
         cur.close()
