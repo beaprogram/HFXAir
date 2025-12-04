@@ -68,6 +68,7 @@ export interface ApiItem {
   description: string;
   base_price: number;
   availability: string;
+  stock_quantity?: number;
   variant_types?: string[];
   variants?: ApiVariant[];
 }
@@ -143,6 +144,7 @@ export interface Item {
   currency: string;
   category: string;
   availability: AvailabilityStatus;
+  stockQuantity?: number;
   variantTypes: string[];
   variants: Variant[];
 }

@@ -44,8 +44,11 @@ export default function ItemCard({ item, onPress }: ItemCardProps) {
           <FontAwesome name="chevron-right" size={14} color="#ccc" style={styles.chevron} />
         </View>
 
-        {item.availability === 'Low Stock' && (
-          <Text style={styles.stockWarning}>Low stock!</Text>
+        {item.availability === 'Low Stock' && item.stockQuantity !== undefined && (
+          <Text style={styles.stockWarning}>Only {item.stockQuantity} left!</Text>
+        )}
+        {item.availability === 'Out of Stock' && (
+          <Text style={styles.outOfStock}>Out of stock</Text>
         )}
       </View>
     </TouchableOpacity>
@@ -66,4 +69,5 @@ const styles = StyleSheet.create({
   optionsText: { fontSize: 10, color: '#2E7D32', fontWeight: '600' },
   chevron: { marginLeft: 'auto' },
   stockWarning: { fontSize: 11, color: '#E65100', fontWeight: '500', marginTop: 4 },
+  outOfStock: { fontSize: 11, color: '#D32F2F', fontWeight: '500', marginTop: 4 }
 });

@@ -83,6 +83,7 @@ const transformItem = (apiItem: ApiItem, shopId: string, category: string = 'Gen
   currency: 'CAD',
   category: category,
   availability: transformAvailability(apiItem.availability),
+  stockQuantity: apiItem.stock_quantity,
   variantTypes: apiItem.variant_types || [],
   variants: (apiItem.variants || []).map(v => ({
     variantType: v.variant_type,
