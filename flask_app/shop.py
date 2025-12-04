@@ -109,8 +109,8 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
                         status = f"Opens at {open_time.strftime('%H:%M')}"
                         next_change = open_time.strftime("%H:%M")
                     else:
-                        status = f"Closes at {close_time.strftime('%H:%M')}"
-                        next_change = close_time.strftime("%H:%M")
+                        status = f"Opens at {open_time.strftime('%H:%M')}"
+                        next_change = open_time.strftime("%H:%M")
                 except Exception:
                     status = "Unknown"
             elif is_closed:
@@ -256,8 +256,8 @@ def get_shop_by_id(shop_id):
                     "open_time": open_time.strftime("%H:%M") if isinstance(open_time, time) else str(open_time)[:5],
                     "close_time": close_time.strftime("%H:%M") if isinstance(close_time, time) else str(close_time)[:5],
                     "is_open": is_open,
-                    "status": "Open now" if is_open else f"Closes at {close_time.strftime('%H:%M') if isinstance(close_time, time) else str(close_time)[:5]}",
-                    "next_change": close_time.strftime("%H:%M") if isinstance(close_time, time) else str(close_time)[:5]
+                    "status": "Open now" if is_open else f"Opens at {open_time.strftime('%H:%M') if isinstance(open_time, time) else str(open_time)[:5]}",
+                    "next_change": (close_time.strftime("%H:%M") if isinstance(close_time, time) else str(close_time)[:5]) if is_open else (open_time.strftime("%H:%M") if isinstance(open_time, time) else str(open_time)[:5])
                 }
             elif is_closed:
                 today_hours["status"] = "Closed today"
