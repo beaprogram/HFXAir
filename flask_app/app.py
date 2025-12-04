@@ -11,6 +11,15 @@ from pathlib import Path
 from flask_app.auth import require_auth
 from flask_app.helper.helper_firebase_notification import send_push, notify_subscribers
 from flask_app.helper.helper_cron_jobs import start_background_jobs
+from flask_app.constants import (
+    HTTP_OK,
+    HTTP_BAD_REQUEST,
+    HTTP_UNAUTHORIZED,
+    HTTP_NOT_FOUND,
+    HTTP_INTERNAL_ERROR,
+    TOKEN_EXPIRY_HOURS,
+    DB_CONNECT_TIMEOUT_SECONDS
+)
 
 
 # Load environment variables from .env file
@@ -26,7 +35,6 @@ logging.basicConfig(
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
-TOKEN_EXPIRY_HOURS = 24
 SECRET = "hfxair-app-secret"
 
 # Initialize background cron jobs
@@ -41,7 +49,7 @@ def get_db_connection():
         user=os.getenv("DB_USER", "root"),
         password=os.getenv("DB_PASSWORD", ""),
         port=int(os.getenv("DB_PORT", "3306")),
-        connect_timeout=5
+        connect_timeout=DB_CONNECT_TIMEOUT_SECONDS
     )
 
 
@@ -57,14 +65,14 @@ def send_notification():
 
     if token:
         success = send_push(token, title, body)
-        return jsonify({"success": success}), (200 if success else 500)
+        return jsonify({"success": success}), (HTTP_OK if success else HTTP_INTERNAL_ERROR)
 
     # If ticket_no or flight_id provided, send to all subscribers
     if ticket_no or flight_id:
         summary = notify_subscribers(ticket_no=ticket_no, flight_id=flight_id, title=title, body=body)
-        return jsonify({"summary": summary}), 200
+        return jsonify({"summary": summary}), HTTP_OK
 
-    return jsonify({"error": "Provide 'token' or 'ticket_no'/'flight_id' in request body"}), 400
+    return jsonify({"error": "Provide 'token' or 'ticket_no'/'flight_id' in request body"}), HTTP_BAD_REQUEST
 
 
 @app.route('/')
@@ -75,13 +83,13 @@ def home():
 def check_empty(data):
     """Validate that required fields are present and not empty/None"""
     if not data:
-        return jsonify({"error": "Missing required fields"}), 400
+        return jsonify({"error": "Missing required fields"}), HTTP_BAD_REQUEST
     
     flight_number = data.get("flight_number")
     ticket_number = data.get("ticket_number")
     
     if not flight_number or not ticket_number:
-        return jsonify({"error": "Missing required fields"}), 400
+        return jsonify({"error": "Missing required fields"}), HTTP_BAD_REQUEST
     
     return None
 
@@ -123,20 +131,20 @@ def login():
     
     if check_db_for_ticket(flight_number, ticket_number):
         token = create_token(flight_number, ticket_number)
-        return jsonify({"token": token}), 200
-    return jsonify({"error": "Invalid flight or ticket"}), 401
+        return jsonify({"token": token}), HTTP_OK
+    return jsonify({"error": "Invalid flight or ticket"}), HTTP_UNAUTHORIZED
 
 
 @app.get("/protected-test")
 @require_auth(SECRET)
 def protected_test():
-    return jsonify({"message": "Access granted"}), 200
+    return jsonify({"message": "Access granted"}), HTTP_OK
 
 
 @app.get("/flights")
 def get_flights():
     flights = get_all_flights()
-    return jsonify(flights), 200
+    return jsonify(flights), HTTP_OK
 
 def get_all_flights():
     logging.info("connecting db")
@@ -211,8 +219,8 @@ def get_all_flights():
 def get_flight_details(flight_id):
     flight = get_flight_by_id(flight_id)
     if flight:
-        return jsonify(flight), 200
-    return jsonify({"error": "Flight not found"}), 404
+        return jsonify(flight), HTTP_OK
+    return jsonify({"error": "Flight not found"}), HTTP_NOT_FOUND
 
 
 def get_flight_by_id(flight_id):    
@@ -240,12 +248,12 @@ def get_flight_by_id(flight_id):
 @app.get("/flights/arrivals")
 def arrivals():
     flights = get_arrivals()
-    return jsonify(flights), 200
+    return jsonify(flights), HTTP_OK
 
 @app.get("/flights/departures")
 def departures():
     flights = get_departures()
-    return jsonify(flights), 200
+    return jsonify(flights), HTTP_OK
 
 
 def get_arrivals():
@@ -376,11 +384,11 @@ def subscribe():
     expo_token = data.get("expo_token")
 
     if not flight_id or not expo_token:
-        return jsonify({"error": "Missing fields"}), 400
+        return jsonify({"error": "Missing fields"}), HTTP_BAD_REQUEST
 
     ticket_no = request.user["ticket_no"]
     save_subscription(ticket_no, flight_id, expo_token)
-    return jsonify({"message": "Subscribed"}), 200
+    return jsonify({"message": "Subscribed"}), HTTP_OK
 
 
 def save_subscription(ticket_no, flight_id, expo_token):

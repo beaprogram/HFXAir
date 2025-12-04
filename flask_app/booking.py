@@ -9,6 +9,23 @@ import logging
 import random
 import string
 import jwt
+from flask_app.constants import (
+    HTTP_OK,
+    HTTP_CREATED,
+    HTTP_BAD_REQUEST,
+    HTTP_UNAUTHORIZED,
+    HTTP_FORBIDDEN,
+    HTTP_NOT_FOUND,
+    HTTP_INTERNAL_ERROR,
+    MIN_BOOKING_QUANTITY,
+    MAX_BOOKING_QUANTITY,
+    PICKUP_CODE_LENGTH,
+    PICKUP_CODE_MAX_ATTEMPTS,
+    LOW_STOCK_THRESHOLD,
+    OUT_OF_STOCK_THRESHOLD,
+    BOOKING_EXPIRY_HOURS,
+    DEFAULT_QUANTITY
+)
 
 
 # ============== HELPER FUNCTIONS ==============
@@ -16,12 +33,12 @@ import jwt
 def generate_pickup_code():
     """Generate unique 6-character alphanumeric code"""
     chars = string.ascii_uppercase + string.digits
-    return ''.join(random.choice(chars) for _ in range(6))
+    return ''.join(random.choice(chars) for _ in range(PICKUP_CODE_LENGTH))
 
 
 def generate_unique_pickup_code(cursor):
     """Generate unique pickup code that doesn't exist in database"""
-    for _ in range(100):  # Max 100 attempts
+    for _ in range(PICKUP_CODE_MAX_ATTEMPTS):
         code = generate_pickup_code()
         cursor.execute("SELECT id FROM bookings WHERE pickup_code = %s", (code,))
         if not cursor.fetchone():
@@ -40,9 +57,9 @@ def calculate_total_price(base_price, quantity, selected_variants):
 
 def get_availability_status(stock_quantity):
     """Get availability status based on stock quantity"""
-    if stock_quantity <= 0:
+    if stock_quantity <= OUT_OF_STOCK_THRESHOLD:
         return 'out_of_stock'
-    elif stock_quantity <= 5:
+    elif stock_quantity <= LOW_STOCK_THRESHOLD:
         return 'low_stock'
     else:
         return 'in_stock'
@@ -102,25 +119,26 @@ def get_user_bookings(user_id, status=None):
                 b.total_price,
                 b.status,
                 b.pickup_code,
-                b.selected_variants,
                 b.created_at,
                 b.expires_at,
                 b.cancelled_at,
                 b.picked_up_at,
+                b.selected_variants,
                 i.name as item_name,
                 i.description as item_description,
-                i.base_price as item_base_price,
-                i.availability as item_availability,
-                i.stock_quantity as item_stock_quantity,
+                i.base_price,
+                i.availability,
+                i.stock_quantity,
                 s.name as shop_name,
                 s.location_description as shop_location,
                 s.terminal as shop_terminal,
                 s.gate as shop_gate
             FROM bookings b
-            JOIN items i ON b.item_id = i.item_id
-            JOIN shops s ON b.shop_id = s.shop_id
+            LEFT JOIN items i ON b.item_id = i.item_id
+            LEFT JOIN shops s ON b.shop_id = s.shop_id
             WHERE b.user_id = %s
         """
+        
         params = [user_id]
         
         if status:
@@ -134,44 +152,54 @@ def get_user_bookings(user_id, status=None):
         
         bookings = []
         for row in rows:
-            bookings.append({
+            # Parse selected_variants if exists
+            selected_variants = None
+            if row[12]:  # selected_variants column
+                import json
+                try:
+                    selected_variants = json.loads(row[12])
+                except:
+                    selected_variants = None
+            
+            booking = {
                 'id': row[0],
                 'user_id': row[1],
                 'item_id': row[2],
                 'shop_id': row[3],
                 'quantity': row[4],
-                'total_price': float(row[5]) if row[5] else 0.0,
+                'total_price': float(row[5]),
                 'status': row[6],
                 'pickup_code': row[7],
-                'selected_variants': row[8],
-                'created_at': row[9].strftime('%Y-%m-%dT%H:%M:%SZ') if row[9] else None,
-                'expires_at': row[10].strftime('%Y-%m-%dT%H:%M:%SZ') if row[10] else None,
-                'cancelled_at': row[11].strftime('%Y-%m-%dT%H:%M:%SZ') if row[11] else None,
-                'picked_up_at': row[12].strftime('%Y-%m-%dT%H:%M:%SZ') if row[12] else None,
+                'created_at': row[8].strftime('%Y-%m-%dT%H:%M:%SZ') if row[8] else None,
+                'expires_at': row[9].strftime('%Y-%m-%dT%H:%M:%SZ') if row[9] else None,
+                'cancelled_at': row[10].strftime('%Y-%m-%dT%H:%M:%SZ') if row[10] else None,
+                'picked_up_at': row[11].strftime('%Y-%m-%dT%H:%M:%SZ') if row[11] else None,
+                'selected_variants': selected_variants,
                 'item': {
                     'id': row[2],
                     'name': row[13],
                     'description': row[14],
-                    'base_price': float(row[15]) if row[15] else 0.0,
+                    'base_price': float(row[15]) if row[15] else None,
                     'availability': row[16],
                     'stock_quantity': row[17]
-                },
+                } if row[13] else None,
                 'shop': {
                     'id': row[3],
                     'name': row[18],
                     'location': row[19],
                     'terminal': row[20],
                     'gate': row[21]
-                }
-            })
+                } if row[18] else None
+            }
+            bookings.append(booking)
         
         cur.close()
         conn.close()
         
         return {'success': True, 'bookings': bookings}
-    
+        
     except Exception as e:
-        logging.error(f"Error fetching bookings: {e}")
+        logging.error(f"Error fetching user bookings: {e}")
         return {'success': False, 'error': str(e)}
 
 
@@ -183,11 +211,11 @@ def create_booking(user_id, item_id, shop_id, quantity, selected_variants=None):
         cur = conn.cursor()
         
         # Validate quantity
-        if quantity < 1 or quantity > 3:
+        if quantity < MIN_BOOKING_QUANTITY or quantity > MAX_BOOKING_QUANTITY:
             return {
                 'success': False,
                 'error': 'Invalid quantity',
-                'message': 'Quantity must be between 1 and 3'
+                'message': f'Quantity must be between {MIN_BOOKING_QUANTITY} and {MAX_BOOKING_QUANTITY}'
             }
         
         # Get item with lock
@@ -222,7 +250,7 @@ def create_booking(user_id, item_id, shop_id, quantity, selected_variants=None):
         shop_id_db, shop_name, shop_location, shop_terminal, shop_gate = shop
         
         # Check if item is out of stock
-        if availability == 'out_of_stock' or stock_qty <= 0:
+        if availability == 'out_of_stock' or stock_qty <= OUT_OF_STOCK_THRESHOLD:
             cur.close()
             conn.close()
             return {
@@ -267,7 +295,7 @@ def create_booking(user_id, item_id, shop_id, quantity, selected_variants=None):
         
         # Set times
         created_at = datetime.utcnow()
-        expires_at = created_at + timedelta(hours=24)
+        expires_at = created_at + timedelta(hours=BOOKING_EXPIRY_HOURS)
         
         # Convert selected_variants to JSON string if provided
         import json
@@ -350,100 +378,123 @@ def cancel_booking(booking_id, user_id):
         cur = conn.cursor()
         
         # Get booking with lock
-        cur.execute(
-            "SELECT id, user_id, item_id, quantity, status FROM bookings WHERE id = %s FOR UPDATE",
-            (booking_id,)
-        )
+        cur.execute("""
+            SELECT id, user_id, item_id, shop_id, quantity, status
+            FROM bookings 
+            WHERE id = %s 
+            FOR UPDATE
+        """, (booking_id,))
         booking = cur.fetchone()
         
         if not booking:
             cur.close()
             conn.close()
-            return {'success': False, 'error': 'Not found', 'message': 'Reservation not found'}
+            return {'success': False, 'error': 'Not found', 'message': 'Booking not found'}
         
-        booking_id_db, booking_user_id, item_id, quantity, status = booking
+        booking_id_db, booking_user_id, item_id, shop_id, quantity, status = booking
         
-        # Check ownership
+        # Verify user owns the booking
         if booking_user_id != user_id:
             cur.close()
             conn.close()
-            return {
-                'success': False,
-                'error': 'Forbidden',
-                'message': "You don't have permission to cancel this reservation"
-            }
+            return {'success': False, 'error': 'Forbidden', 'message': 'Not your booking'}
         
-        # Check status
-        if status == 'cancelled':
+        # Check if booking is active
+        if status != 'active':
             cur.close()
             conn.close()
-            return {
-                'success': False,
-                'error': 'Already cancelled',
-                'message': 'This reservation has already been cancelled'
-            }
+            return {'success': False, 'error': 'Invalid status', 'message': f'Cannot cancel booking with status: {status}'}
         
-        if status == 'expired':
-            cur.close()
-            conn.close()
-            return {
-                'success': False,
-                'error': 'Expired',
-                'message': 'This reservation has already expired'
-            }
-        
-        if status == 'picked_up':
-            cur.close()
-            conn.close()
-            return {
-                'success': False,
-                'error': 'Already picked up',
-                'message': 'This item has already been picked up'
-            }
-        
+        # Update booking status
         cancelled_at = datetime.utcnow()
-        
-        # Update booking
-        cur.execute(
-            "UPDATE bookings SET status = 'cancelled', cancelled_at = %s WHERE id = %s",
-            (cancelled_at, booking_id)
-        )
+        cur.execute("""
+            UPDATE bookings 
+            SET status = 'cancelled', cancelled_at = %s 
+            WHERE id = %s
+        """, (cancelled_at, booking_id))
         
         # Restore stock
-        cur.execute(
-            "SELECT stock_quantity, name FROM items WHERE item_id = %s FOR UPDATE",
-            (item_id,)
-        )
-        item = cur.fetchone()
+        cur.execute("""
+            UPDATE items 
+            SET stock_quantity = stock_quantity + %s 
+            WHERE item_id = %s
+        """, (quantity, item_id))
         
-        new_stock = item[0] + quantity
+        # Get updated stock to recalculate availability
+        cur.execute("SELECT stock_quantity FROM items WHERE item_id = %s", (item_id,))
+        result = cur.fetchone()
+        new_stock = result[0] if result else 0
         new_availability = get_availability_status(new_stock)
         
         cur.execute(
-            "UPDATE items SET stock_quantity = %s, availability = %s WHERE item_id = %s",
-            (new_stock, new_availability, item_id)
+            "UPDATE items SET availability = %s WHERE item_id = %s",
+            (new_availability, item_id)
         )
         
         conn.commit()
+        
+        # Fetch updated booking
+        cur.execute("""
+            SELECT 
+                b.id, b.user_id, b.item_id, b.shop_id, b.quantity,
+                b.total_price, b.status, b.pickup_code,
+                b.created_at, b.expires_at, b.cancelled_at, b.picked_up_at,
+                b.selected_variants,
+                i.name, i.description, i.base_price, i.availability, i.stock_quantity,
+                s.name, s.location_description, s.terminal, s.gate
+            FROM bookings b
+            LEFT JOIN items i ON b.item_id = i.item_id
+            LEFT JOIN shops s ON b.shop_id = s.shop_id
+            WHERE b.id = %s
+        """, (booking_id,))
+        
+        row = cur.fetchone()
         cur.close()
         conn.close()
+        
+        # Parse selected_variants
+        selected_variants = None
+        if row[12]:
+            import json
+            try:
+                selected_variants = json.loads(row[12])
+            except:
+                selected_variants = None
         
         return {
             'success': True,
             'booking': {
-                'id': booking_id,
-                'status': 'cancelled',
-                'cancelled_at': cancelled_at.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                'message': 'Reservation cancelled successfully',
+                'id': row[0],
+                'user_id': row[1],
+                'item_id': row[2],
+                'shop_id': row[3],
+                'quantity': row[4],
+                'total_price': float(row[5]),
+                'status': row[6],
+                'pickup_code': row[7],
+                'created_at': row[8].strftime('%Y-%m-%dT%H:%M:%SZ') if row[8] else None,
+                'expires_at': row[9].strftime('%Y-%m-%dT%H:%M:%SZ') if row[9] else None,
+                'cancelled_at': row[10].strftime('%Y-%m-%dT%H:%M:%SZ') if row[10] else None,
+                'picked_up_at': row[11].strftime('%Y-%m-%dT%H:%M:%SZ') if row[11] else None,
+                'selected_variants': selected_variants,
                 'item': {
-                    'id': item_id,
-                    'name': item[1],
-                    'availability': new_availability,
-                    'stock_quantity': new_stock
-                }
+                    'id': row[2],
+                    'name': row[13],
+                    'description': row[14],
+                    'base_price': float(row[15]) if row[15] else None,
+                    'availability': row[16],
+                    'stock_quantity': row[17]
+                } if row[13] else None,
+                'shop': {
+                    'id': row[3],
+                    'name': row[18],
+                    'location': row[19],
+                    'terminal': row[20],
+                    'gate': row[21]
+                } if row[18] else None
             }
         }
-    
+        
     except Exception as e:
         if conn:
             conn.rollback()
@@ -453,50 +504,54 @@ def cancel_booking(booking_id, user_id):
 
 
 def expire_old_bookings():
-    """Expire bookings older than 24 hours"""
+    """Expire bookings that have passed their expiration time"""
     conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Find expired bookings
+        # Find expired active bookings
+        now = datetime.utcnow()
         cur.execute("""
-            SELECT id, item_id, quantity FROM bookings 
-            WHERE status = 'active' AND expires_at < NOW()
-        """)
+            SELECT id, item_id, quantity
+            FROM bookings
+            WHERE status = 'active' AND expires_at < %s
+            FOR UPDATE
+        """, (now,))
+        
         expired_bookings = cur.fetchall()
         
-        count = 0
         for booking_id, item_id, quantity in expired_bookings:
-            # Update status
-            cur.execute(
-                "UPDATE bookings SET status = 'expired' WHERE id = %s",
-                (booking_id,)
-            )
+            # Update booking status
+            cur.execute("""
+                UPDATE bookings 
+                SET status = 'expired' 
+                WHERE id = %s
+            """, (booking_id,))
             
             # Restore stock
-            cur.execute(
-                "SELECT stock_quantity FROM items WHERE item_id = %s FOR UPDATE",
-                (item_id,)
-            )
-            item = cur.fetchone()
+            cur.execute("""
+                UPDATE items 
+                SET stock_quantity = stock_quantity + %s 
+                WHERE item_id = %s
+            """, (quantity, item_id))
             
-            new_stock = item[0] + quantity
+            # Update availability
+            cur.execute("SELECT stock_quantity FROM items WHERE item_id = %s", (item_id,))
+            result = cur.fetchone()
+            new_stock = result[0] if result else 0
             new_availability = get_availability_status(new_stock)
             
             cur.execute(
-                "UPDATE items SET stock_quantity = %s, availability = %s WHERE item_id = %s",
-                (new_stock, new_availability, item_id)
+                "UPDATE items SET availability = %s WHERE item_id = %s",
+                (new_availability, item_id)
             )
-            
-            count += 1
         
         conn.commit()
         cur.close()
         conn.close()
         
-        logging.info(f"Expired {count} bookings")
-        return count
+        return len(expired_bookings)
     
     except Exception as e:
         if conn:
@@ -518,19 +573,19 @@ def list_bookings():
         # Fallback to query param for testing
         user_id = request.args.get("user_id")
         if not user_id:
-            return jsonify({"error": "Unauthorized", "message": error}), 401
+            return jsonify({"error": "Unauthorized", "message": error}), HTTP_UNAUTHORIZED
         try:
             ticket_id = int(user_id)
         except ValueError:
-            return jsonify({"error": "Invalid user_id"}), 400
+            return jsonify({"error": "Invalid user_id"}), HTTP_BAD_REQUEST
     
     status = request.args.get("status")
     result = get_user_bookings(user_id=ticket_id, status=status)
     
     if result['success']:
-        return jsonify({'bookings': result['bookings']}), 200
+        return jsonify({'bookings': result['bookings']}), HTTP_OK
     else:
-        return jsonify({'error': result['error']}), 500
+        return jsonify({'error': result['error']}), HTTP_INTERNAL_ERROR
 
 
 @app.post("/bookings")
@@ -544,21 +599,21 @@ def create_booking_route():
         data = request.get_json() or {}
         user_id = data.get('user_id')
         if not user_id:
-            return jsonify({"error": "Unauthorized", "message": error}), 401
+            return jsonify({"error": "Unauthorized", "message": error}), HTTP_UNAUTHORIZED
         ticket_id = user_id
     
     data = request.get_json()
     
     if not data:
-        return jsonify({"error": "Missing request body"}), 400
+        return jsonify({"error": "Missing request body"}), HTTP_BAD_REQUEST
     
     item_id = data.get('item_id')
     shop_id = data.get('shop_id')
-    quantity = data.get('quantity', 1)
+    quantity = data.get('quantity', DEFAULT_QUANTITY)
     selected_variants = data.get('selected_variants')
     
     if not item_id or not shop_id:
-        return jsonify({"error": "Missing required fields", "message": "item_id and shop_id are required"}), 400
+        return jsonify({"error": "Missing required fields", "message": "item_id and shop_id are required"}), HTTP_BAD_REQUEST
     
     result = create_booking(
         user_id=ticket_id,
@@ -569,11 +624,11 @@ def create_booking_route():
     )
     
     if result['success']:
-        return jsonify(result['booking']), 201
+        return jsonify(result['booking']), HTTP_CREATED
     else:
-        status_code = 400
+        status_code = HTTP_BAD_REQUEST
         if result['error'] == 'Not found':
-            status_code = 404
+            status_code = HTTP_NOT_FOUND
         return jsonify(result), status_code
 
 
@@ -588,17 +643,17 @@ def cancel_booking_route(booking_id):
         data = request.get_json() or {}
         user_id = data.get('user_id')
         if not user_id:
-            return jsonify({"error": "Unauthorized", "message": error}), 401
+            return jsonify({"error": "Unauthorized", "message": error}), HTTP_UNAUTHORIZED
         ticket_id = user_id
     
     result = cancel_booking(booking_id=booking_id, user_id=ticket_id)
     
     if result['success']:
-        return jsonify(result['booking']), 200
+        return jsonify(result['booking']), HTTP_OK
     else:
-        status_code = 400
+        status_code = HTTP_BAD_REQUEST
         if result['error'] == 'Not found':
-            status_code = 404
+            status_code = HTTP_NOT_FOUND
         elif result['error'] == 'Forbidden':
-            status_code = 403
+            status_code = HTTP_FORBIDDEN
         return jsonify(result), status_code

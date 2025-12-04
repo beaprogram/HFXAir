@@ -8,6 +8,21 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 
+from flask_app.constants import (
+    REMINDER_INTERVAL_EARLY,
+    REMINDER_INTERVAL_MIDDLE,
+    REMINDER_INTERVAL_FINAL,
+    REMINDER_WINDOW_EARLY_MIN,
+    REMINDER_WINDOW_EARLY_MAX,
+    REMINDER_WINDOW_MIDDLE_MIN,
+    REMINDER_WINDOW_MIDDLE_MAX,
+    REMINDER_WINDOW_FINAL_MIN,
+    REMINDER_WINDOW_FINAL_MAX,
+    FLIGHT_CLEANUP_MINUTES,
+    SCHEDULER_CHECK_INTERVAL_MINUTES,
+    DB_CONNECT_TIMEOUT_SECONDS
+)
+
 logger = logging.getLogger(__name__)
 
 # Load environment variables
@@ -28,7 +43,7 @@ def get_db_connection():
         user=os.getenv("DB_USER", "root"),
         password=os.getenv("DB_PASSWORD", ""),
         port=int(os.getenv("DB_PORT", "3306")),
-        connect_timeout=5
+        connect_timeout=DB_CONNECT_TIMEOUT_SECONDS
     )
 
 
@@ -47,7 +62,7 @@ def check_departure_reminders():
         # Get current time
         now = datetime.utcnow()
         reminder_window_start = now
-        reminder_window_end = now + timedelta(minutes=30)
+        reminder_window_end = now + timedelta(minutes=REMINDER_INTERVAL_EARLY)
 
         # Query flights departing soon (within 30 minutes)
         # Status should be 'Boarding' or earlier (not yet departed)
@@ -61,7 +76,7 @@ def check_departure_reminders():
         """, (reminder_window_start, reminder_window_end))
 
         flights = cur.fetchall()
-        logger.info(f"Found {len(flights)} flights departing within 30 minutes")
+        logger.info(f"Found {len(flights)} flights departing within {REMINDER_INTERVAL_EARLY} minutes")
 
         # Send reminders for each flight
         for flight in flights:
@@ -72,12 +87,12 @@ def check_departure_reminders():
             
             # Determine which reminder interval this falls into (30, 15, or 5 minutes)
             reminder_interval = None
-            if 29 <= minutes_until <= 31:
-                reminder_interval = 30
-            elif 14 <= minutes_until <= 16:
-                reminder_interval = 15
-            elif 4 <= minutes_until <= 6:
-                reminder_interval = 5
+            if REMINDER_WINDOW_EARLY_MIN <= minutes_until <= REMINDER_WINDOW_EARLY_MAX:
+                reminder_interval = REMINDER_INTERVAL_EARLY
+            elif REMINDER_WINDOW_MIDDLE_MIN <= minutes_until <= REMINDER_WINDOW_MIDDLE_MAX:
+                reminder_interval = REMINDER_INTERVAL_MIDDLE
+            elif REMINDER_WINDOW_FINAL_MIN <= minutes_until <= REMINDER_WINDOW_FINAL_MAX:
+                reminder_interval = REMINDER_INTERVAL_FINAL
             
             # Only send if we're in one of the reminder windows
             if reminder_interval:
@@ -98,12 +113,12 @@ def check_departure_reminders():
                     if tokens:
                         # Build notification message based on interval
                         title = f"Flight {flight_number} Reminder"
-                        if reminder_interval == 30:
-                            body = f"Your flight {flight_number} departs in 30 minutes. Gate: {gate or 'TBA'}"
-                        elif reminder_interval == 15:
-                            body = f"Your flight {flight_number} departs in 15 minutes. Please head to gate {gate or 'TBA'}"
-                        else:  # 5 minutes
-                            body = f"Your flight {flight_number} departs in 5 minutes! Get to gate {gate or 'TBA'} NOW!"
+                        if reminder_interval == REMINDER_INTERVAL_EARLY:
+                            body = f"Your flight {flight_number} departs in {REMINDER_INTERVAL_EARLY} minutes. Gate: {gate or 'TBA'}"
+                        elif reminder_interval == REMINDER_INTERVAL_MIDDLE:
+                            body = f"Your flight {flight_number} departs in {REMINDER_INTERVAL_MIDDLE} minutes. Please head to gate {gate or 'TBA'}"
+                        else:  # Final reminder
+                            body = f"Your flight {flight_number} departs in {REMINDER_INTERVAL_FINAL} minutes! Get to gate {gate or 'TBA'} NOW!"
                         
                         # Send notifications
                         from flask_app.helper.helper_firebase_notification import notify_subscribers
@@ -115,7 +130,7 @@ def check_departure_reminders():
                         reminder_cache[flight_id][reminder_interval] = True
             else:
                 # If flight is beyond 30 min window, reset cache so reminders can be sent again if departure is delayed
-                if flight_id in reminder_cache and minutes_until < -5:
+                if flight_id in reminder_cache and minutes_until < FLIGHT_CLEANUP_MINUTES:
                     # Flight has departed or passed all reminder windows
                     del reminder_cache[flight_id]
 
@@ -246,7 +261,7 @@ def start_background_jobs(app):
         scheduler.add_job(
             func=check_departure_reminders,
             trigger="interval",
-            minutes=1,
+            minutes=SCHEDULER_CHECK_INTERVAL_MINUTES,
             id="departure_reminders",
             name="Check departure reminders",
             replace_existing=True
@@ -256,7 +271,7 @@ def start_background_jobs(app):
         scheduler.add_job(
             func=check_flight_updates,
             trigger="interval",
-            minutes=1,
+            minutes=SCHEDULER_CHECK_INTERVAL_MINUTES,
             id="flight_updates",
             name="Check flight updates",
             replace_existing=True
@@ -266,7 +281,7 @@ def start_background_jobs(app):
         if not scheduler.running:
             scheduler.start()
             logger.info("Background scheduler started successfully")
-            logger.info("Jobs: departure_reminders (every 1 min), flight_updates (every 1 min)")
+            logger.info(f"Jobs: departure_reminders (every {SCHEDULER_CHECK_INTERVAL_MINUTES} min), flight_updates (every {SCHEDULER_CHECK_INTERVAL_MINUTES} min)")
         
         return scheduler
         
