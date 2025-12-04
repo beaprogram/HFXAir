@@ -17,13 +17,18 @@ export default function BookingCard({ booking, onPress, onCancel, onRebook }: Bo
   const status = getBookingStatus(booking);
   const isActive = status === 'Active' || status === 'Expiring Soon';
   const canRebook = status === 'Cancelled' || status === 'Expired';
+    // Safely access shop and item properties
+  const shopName = booking.shop?.name || 'Unknown Shop';
+  const itemName = booking.item?.name || 'Unknown Item';
+  const shopLocation = booking.shop?.location || 'Unknown Location';
+  const shopGate = booking.shop?.gate;
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.header}>
         <View style={styles.shopInfo}>
-          <Text style={styles.shopName}>{booking.shop.name}</Text>
-          <Text style={styles.itemName}>{booking.item.name}</Text>
+          <Text style={styles.shopName}>{shopName}</Text>
+          <Text style={styles.itemName}>{itemName}</Text>
         </View>
         <StatusBadge status={status} />
       </View>
@@ -57,8 +62,8 @@ export default function BookingCard({ booking, onPress, onCancel, onRebook }: Bo
       <View style={styles.locationInfo}>
         <FontAwesome name="map-marker" size={12} color="#666" />
         <Text style={styles.locationText}>
-          Pickup at {booking.shop.location}
-          {booking.shop.gate ? ` · ${booking.shop.gate}` : ''}
+          Pickup at {shopLocation}
+          {shopGate ? ` · ${shopGate}` : ''}
         </Text>
       </View>
 
