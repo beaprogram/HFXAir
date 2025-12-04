@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import logging
 import random
 import string
+import jwt
 
 
 # ============== HELPER FUNCTIONS ==============
@@ -45,6 +46,42 @@ def get_availability_status(stock_quantity):
         return 'low_stock'
     else:
         return 'in_stock'
+
+
+def get_ticket_id_from_token():
+    """Extract ticket_id from JWT token"""
+    SECRET = "hfxair-app-secret"
+    
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return None, "No authorization token provided"
+    
+    token = auth_header.split(' ')[1]
+    
+    try:
+        payload = jwt.decode(token, SECRET, algorithms=["HS256"])
+        ticket_no = payload.get('ticket_no')
+        
+        if not ticket_no:
+            return None, "Invalid token: no ticket_no"
+        
+        # Look up ticket_id from ticket_number
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT ticket_id FROM tickets WHERE ticket_number = %s", (ticket_no,))
+        result = cur.fetchone()
+        cur.close()
+        conn.close()
+        
+        if not result:
+            return None, "Ticket not found"
+        
+        return result[0], None  # Return ticket_id
+        
+    except jwt.ExpiredSignatureError:
+        return None, "Token has expired"
+    except jwt.InvalidTokenError:
+        return None, "Invalid token"
 
 
 # ============== DATABASE FUNCTIONS ==============
@@ -474,19 +511,21 @@ def expire_old_bookings():
 @app.get("/bookings")
 def list_bookings():
     """GET /bookings - Get all user bookings"""
-    # Get user_id from query param (temporary - should come from auth)
-    user_id = request.args.get("user_id")
+    # Get ticket_id from JWT token
+    ticket_id, error = get_ticket_id_from_token()
+    
+    if error:
+        # Fallback to query param for testing
+        user_id = request.args.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Unauthorized", "message": error}), 401
+        try:
+            ticket_id = int(user_id)
+        except ValueError:
+            return jsonify({"error": "Invalid user_id"}), 400
+    
     status = request.args.get("status")
-    
-    if not user_id:
-        return jsonify({"error": "Unauthorized", "message": "user_id is required"}), 401
-    
-    try:
-        user_id = int(user_id)
-    except ValueError:
-        return jsonify({"error": "Invalid user_id"}), 400
-    
-    result = get_user_bookings(user_id=user_id, status=status)
+    result = get_user_bookings(user_id=ticket_id, status=status)
     
     if result['success']:
         return jsonify({'bookings': result['bookings']}), 200
@@ -497,25 +536,32 @@ def list_bookings():
 @app.post("/bookings")
 def create_booking_route():
     """POST /bookings - Create new booking"""
+    # Get ticket_id from JWT token
+    ticket_id, error = get_ticket_id_from_token()
+    
+    if error:
+        # Fallback to request body for testing
+        data = request.get_json() or {}
+        user_id = data.get('user_id')
+        if not user_id:
+            return jsonify({"error": "Unauthorized", "message": error}), 401
+        ticket_id = user_id
+    
     data = request.get_json()
     
     if not data:
         return jsonify({"error": "Missing request body"}), 400
     
-    user_id = data.get('user_id')
     item_id = data.get('item_id')
     shop_id = data.get('shop_id')
     quantity = data.get('quantity', 1)
     selected_variants = data.get('selected_variants')
     
-    if not user_id:
-        return jsonify({"error": "Unauthorized", "message": "user_id is required"}), 401
-    
     if not item_id or not shop_id:
         return jsonify({"error": "Missing required fields", "message": "item_id and shop_id are required"}), 400
     
     result = create_booking(
-        user_id=user_id,
+        user_id=ticket_id,
         item_id=item_id,
         shop_id=shop_id,
         quantity=quantity,
@@ -534,14 +580,18 @@ def create_booking_route():
 @app.post("/bookings/<int:booking_id>/cancel")
 def cancel_booking_route(booking_id):
     """POST /bookings/<booking_id>/cancel - Cancel booking"""
-    data = request.get_json() or {}
+    # Get ticket_id from JWT token
+    ticket_id, error = get_ticket_id_from_token()
     
-    user_id = data.get('user_id')
+    if error:
+        # Fallback to request body for testing
+        data = request.get_json() or {}
+        user_id = data.get('user_id')
+        if not user_id:
+            return jsonify({"error": "Unauthorized", "message": error}), 401
+        ticket_id = user_id
     
-    if not user_id:
-        return jsonify({"error": "Unauthorized", "message": "user_id is required"}), 401
-    
-    result = cancel_booking(booking_id=booking_id, user_id=user_id)
+    result = cancel_booking(booking_id=booking_id, user_id=ticket_id)
     
     if result['success']:
         return jsonify(result['booking']), 200
@@ -551,4 +601,4 @@ def cancel_booking_route(booking_id):
             status_code = 404
         elif result['error'] == 'Forbidden':
             status_code = 403
-        return jsonify(result), status_code
+        return jsonify(result), status_codes
