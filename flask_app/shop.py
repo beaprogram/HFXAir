@@ -6,6 +6,10 @@ from flask import request, jsonify
 from flask_app.app import app, get_db_connection
 from datetime import datetime, time, timedelta
 import logging
+import pytz
+
+# Halifax timezone
+HALIFAX_TZ = pytz.timezone('America/Halifax')
 
 
 def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None):
@@ -33,8 +37,8 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
         where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
         
         # Get current day of week (0=Monday, 6=Sunday)
-        current_day = datetime.now().weekday()
-        current_time = datetime.now().time()
+        current_day = datetime.now(HALIFAX_TZ).weekday()
+        current_time = datetime.now(HALIFAX_TZ).time()
         
         # Build ORDER BY clause
         order_by = "ORDER BY s.name"
@@ -193,8 +197,8 @@ def get_shop_by_id(shop_id):
         shop_id_db, name, category, description, terminal, gate, location_description = row
         
         # Get today's hours
-        current_day = datetime.now().weekday()
-        current_time = datetime.now().time()
+        current_day = datetime.now(HALIFAX_TZ).weekday()
+        current_time = datetime.now(HALIFAX_TZ).time()
         
         hours_query = """
             SELECT open_time, close_time, is_closed
