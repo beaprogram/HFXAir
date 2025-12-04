@@ -15,7 +15,7 @@ import { mockShops, mockItems } from '../data/mockShopsData';
 import { generatePickupCode, calculateExpiryTime, getBookingStatus } from '../utils/shopHelpers';
 import axiosProvider from './axiosProvider';
 
-const USE_MOCK_DATA = false;
+const USE_MOCK_DATA = true;
 const API_BASE_URL = '';
 
 const ENDPOINTS = {
@@ -84,6 +84,7 @@ const transformItem = (apiItem: ApiItem, shopId: string, category: string = 'Gen
   category: category,
   availability: transformAvailability(apiItem.availability),
   stockQuantity: apiItem.stock_quantity,
+  imageUrl: apiItem.image_url, 
   variantTypes: apiItem.variant_types || [],
   variants: (apiItem.variants || []).map(v => ({
     variantType: v.variant_type,

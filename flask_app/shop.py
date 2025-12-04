@@ -566,7 +566,7 @@ def get_shop_items(shop_id, search=None, category_id=None, min_price=None,
             order_by = "ORDER BY i.base_price DESC"
         
         query = f"""
-            SELECT item_id, name, base_price, description, availability, stock_quantity
+            SELECT item_id, name, base_price, description, availability, stock_quantity, image_url
             FROM items i
             {where_clause}
             {order_by}
@@ -576,14 +576,38 @@ def get_shop_items(shop_id, search=None, category_id=None, min_price=None,
         rows = cur.fetchall()
         
         items = []
-        for item_id, name, price, desc, avail, stock_qty in rows:
+        for item_id, name, price, desc, avail, stock_qty, image_url in rows:
+            # Get variants for this item
+            variants_query = """
+                SELECT variant_type, variant_value, price_adjustment
+                FROM item_variants
+                WHERE item_id = %s
+                ORDER BY variant_type, variant_value
+            """
+            cur.execute(variants_query, (item_id,))
+            variant_rows = cur.fetchall()
+            
+            variants = []
+            variant_types_set = set()
+            for var_type, var_value, price_adj in variant_rows:
+                variant_types_set.add(var_type)
+                variants.append({
+                    "variant_type": var_type,
+                    "variant_value": var_value,
+                    "price_adjustment": float(price_adj) if price_adj else 0.0,
+                    "final_price": float(price) + (float(price_adj) if price_adj else 0.0)
+                })
+            
             items.append({
                 "item_id": item_id,
                 "name": name,
                 "base_price": float(price) if price else 0.0,
                 "description": desc,
                 "availability": avail,
-                "stock_quantity": stock_qty
+                "stock_quantity": stock_qty,
+                "image_url": image_url, 
+                "variants": variants,
+                "variant_types": list(variant_types_set)
             })
         
         cur.close()
