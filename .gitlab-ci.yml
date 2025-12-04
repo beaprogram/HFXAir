@@ -1,7 +1,21 @@
 stages:
+  - build
   - test
   - deploy
   - code-quality
+
+# ==================== BUILD ====================
+build:
+  stage: build
+  tags:
+    - vm-runner
+  script:
+    - cd $CI_PROJECT_DIR/flask_app
+    - source /home/student/venv/bin/activate
+    - pip install -r requirements.txt
+    - python -c "from app import app; print('App loads successfully')"
+  only:
+    - refactor/shopping-page-components-integration
 
 # ==================== TEST ====================
 test:
@@ -11,10 +25,11 @@ test:
   script:
     - cd $CI_PROJECT_DIR/flask_app
     - source /home/student/venv/bin/activate
-    - pip install -r requirements.txt --quiet
     - pytest tests/ -v --tb=short
   only:
     - refactor/shopping-page-components-integration
+  needs:
+    - build
 
 # ==================== DEPLOY ====================
 deploy:
