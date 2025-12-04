@@ -390,8 +390,8 @@ export const BookingService = {
 
     try {
       const response = await axiosProvider.post(ENDPOINTS.BOOKINGS, {
-        item_id: params.itemId,
-        shop_id: params.shopId,
+        item_id: parseInt(params.itemId, 10),
+        shop_id: parseInt(params.shopId, 10),
         quantity: params.quantity,
         selected_variants: params.selectedVariants,
       });
@@ -434,7 +434,7 @@ export const BookingService = {
     }
 
     try {
-      const response = await axiosProvider.post(ENDPOINTS.CANCEL_BOOKING(bookingId));
+      const response = await axiosProvider.post(ENDPOINTS.CANCEL_BOOKING(bookingId), {});
       return { data: response.data, error: null, success: true };
     } catch (error: any) {
       return {
