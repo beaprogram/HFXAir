@@ -93,12 +93,14 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
                     if isinstance(open_t, time):
                         open_time = open_t
                     else:
-                        open_time = datetime.strptime(str(open_t)[:5], "%H:%M").time()
+                        open_str = str(open_t).rstrip(':').split(':')
+                        open_time = time(int(open_str[0]), int(open_str[1]))
                     
                     if isinstance(close_t, time):
                         close_time = close_t
                     else:
-                        close_time = datetime.strptime(str(close_t)[:5], "%H:%M").time()
+                        close_str = str(close_t).rstrip(':').split(':')
+                        close_time = time(int(close_str[0]), int(close_str[1]))
                     
                     is_open = open_time <= current_time <= close_time
                     
