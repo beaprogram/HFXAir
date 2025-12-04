@@ -7,3 +7,5 @@ pytest-flask
 pytest-cov
 pyjwt
 firebase-admin
+pytz
+APScheduler
