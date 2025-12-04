@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { Shop, Item, Booking, SelectedVariant, Variant } from '../../types/shops';
 import { formatPrice, getBookingStatus } from '../../utils/shopHelpers';
@@ -16,19 +16,52 @@ interface ItemDetailViewProps {
 
 const MAX_BOOKING_QUANTITY = 3;
 
+// Helper function to sort variants by value (numeric extraction for sizes)
+const sortVariants = (variants: Variant[]): Variant[] => {
+  return [...variants].sort((a, b) => {
+    // Extract numeric values from variant values (e.g., "50ml" -> 50)
+    const numA = parseFloat(a.variantValue.replace(/[^0-9.]/g, '')) || 0;
+    const numB = parseFloat(b.variantValue.replace(/[^0-9.]/g, '')) || 0;
+    if (numA !== numB) return numA - numB;
+    // If no numbers or equal, sort alphabetically
+    return a.variantValue.localeCompare(b.variantValue);
+  });
+};
+
 export default function ItemDetailView({ shop, item, existingBookings, onBack, onBook }: ItemDetailViewProps) {
   const [quantity, setQuantity] = useState(1);
   const [selectedVariants, setSelectedVariants] = useState<SelectedVariant[]>([]);
   const [isBooking, setIsBooking] = useState(false);
 
+  // Group and sort variants by type
   const variantsByType = useMemo(() => {
     const grouped: Record<string, Variant[]> = {};
     item.variants.forEach(variant => {
       if (!grouped[variant.variantType]) grouped[variant.variantType] = [];
       grouped[variant.variantType].push(variant);
     });
+    // Sort each group
+    Object.keys(grouped).forEach(type => {
+      grouped[type] = sortVariants(grouped[type]);
+    });
     return grouped;
   }, [item.variants]);
+
+  // Auto-select first variant of each type on mount
+  useEffect(() => {
+    const defaultVariants: SelectedVariant[] = [];
+    Object.entries(variantsByType).forEach(([_type, variants]) => {
+      if (variants.length > 0) {
+        const firstVariant = variants[0];
+        defaultVariants.push({
+          variantType: firstVariant.variantType,
+          variantValue: firstVariant.variantValue,
+          priceAdjustment: firstVariant.priceAdjustment,
+        });
+      }
+    });
+    setSelectedVariants(defaultVariants);
+  }, [variantsByType]);
 
   const existingBookingForItem = existingBookings.find(
     b => b.itemId === item.id && (getBookingStatus(b) === 'Active' || getBookingStatus(b) === 'Expiring Soon')
@@ -102,7 +135,15 @@ export default function ItemDetailView({ shop, item, existingBookings, onBack, o
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.imageContainer}>
-          <FontAwesome name="shopping-basket" size={64} color="#0C2340" />
+          {item.imageUrl ? (
+            <Image 
+              source={{ uri: item.imageUrl }} 
+              style={styles.itemImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <FontAwesome name="shopping-basket" size={64} color="#0C2340" />
+          )}
         </View>
 
         <View style={styles.infoCard}>
@@ -121,22 +162,23 @@ export default function ItemDetailView({ shop, item, existingBookings, onBack, o
               <View key={type} style={styles.optionGroup}>
                 <Text style={styles.optionLabel}>{type}</Text>
                 <View style={styles.optionButtons}>
-                  {variants.map(variant => (
-                    <TouchableOpacity
-                      key={`${variant.variantType}-${variant.variantValue}`}
-                      style={[styles.optionButton, isVariantSelected(variant.variantType, variant.variantValue) && styles.optionButtonSelected]}
-                      onPress={() => selectVariant(type, variant)}
-                    >
-                      <Text style={[styles.optionButtonText, isVariantSelected(variant.variantType, variant.variantValue) && styles.optionButtonTextSelected]}>
-                        {variant.variantValue}
-                      </Text>
-                      {variant.priceAdjustment !== 0 && (
-                        <Text style={[styles.optionPriceModifier, isVariantSelected(variant.variantType, variant.variantValue) && styles.optionPriceModifierSelected]}>
-                          {variant.priceAdjustment > 0 ? '+' : ''}{formatPrice(variant.priceAdjustment, item.currency)}
+                  {variants.map(variant => {
+                    const finalPrice = item.basePrice + variant.priceAdjustment;
+                    return (
+                      <TouchableOpacity
+                        key={`${variant.variantType}-${variant.variantValue}`}
+                        style={[styles.optionButton, isVariantSelected(variant.variantType, variant.variantValue) && styles.optionButtonSelected]}
+                        onPress={() => selectVariant(type, variant)}
+                      >
+                        <Text style={[styles.optionButtonText, isVariantSelected(variant.variantType, variant.variantValue) && styles.optionButtonTextSelected]}>
+                          {variant.variantValue}
                         </Text>
-                      )}
-                    </TouchableOpacity>
-                  ))}
+                        <Text style={[styles.optionPrice, isVariantSelected(variant.variantType, variant.variantValue) && styles.optionPriceSelected]}>
+                          {formatPrice(finalPrice, item.currency)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
             ))}
@@ -209,7 +251,8 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#0C2340', flex: 1, textAlign: 'center', marginHorizontal: 8 },
   placeholder: { width: 36 },
   content: { flex: 1 },
-  imageContainer: { height: 200, backgroundColor: '#f5f5f5', justifyContent: 'center', alignItems: 'center' },
+  imageContainer: { height: 200, backgroundColor: '#f5f5f5', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  itemImage: { width: '100%', height: 200 },
   infoCard: { backgroundColor: '#fff', padding: 16, marginBottom: 12 },
   infoHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
   itemName: { fontSize: 20, fontWeight: 'bold', color: '#0C2340', flex: 1, marginRight: 12 },
@@ -220,12 +263,12 @@ const styles = StyleSheet.create({
   optionGroup: { marginBottom: 16 },
   optionLabel: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8 },
   optionButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  optionButton: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#e0e0e0', backgroundColor: '#fff' },
+  optionButton: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#e0e0e0', backgroundColor: '#fff', alignItems: 'center' },
   optionButtonSelected: { borderColor: '#0C2340', backgroundColor: '#0C2340' },
   optionButtonText: { fontSize: 14, color: '#333', fontWeight: '500' },
   optionButtonTextSelected: { color: '#FFD100' },
-  optionPriceModifier: { fontSize: 12, color: '#666', marginTop: 2 },
-  optionPriceModifierSelected: { color: '#FFD100' },
+  optionPrice: { fontSize: 12, color: '#666', marginTop: 2 },
+  optionPriceSelected: { color: '#FFD100' },
   quantityCard: { backgroundColor: '#fff', padding: 16, marginBottom: 12 },
   quantitySelector: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 24 },
   quantityButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFD100', justifyContent: 'center', alignItems: 'center' },
