@@ -22,9 +22,8 @@ deploy:
   tags:
     - vm-runner
   script:
-    - cd /home/student/HFXAIR/group01
-    - git fetch origin refactor/shopping-page-components-integration
-    - git reset --hard origin/refactor/shopping-page-components-integration
+    - echo "Syncing code to deployment directory..."
+    - rsync -av --delete --exclude='.git' --exclude='venv' --exclude='__pycache__' $CI_PROJECT_DIR/ /home/student/HFXAIR/group01/
     - sudo systemctl restart hfxair.service
     - echo "Deployment complete!"
   only:
