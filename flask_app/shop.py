@@ -6,10 +6,6 @@ from flask import request, jsonify
 from flask_app.app import app, get_db_connection
 from datetime import datetime, time, timedelta
 import logging
-import pytz
-
-# Halifax timezone
-HALIFAX_TZ = pytz.timezone('America/Halifax')
 
 
 def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None):
@@ -37,8 +33,8 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
         where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
         
         # Get current day of week (0=Monday, 6=Sunday)
-        current_day = datetime.now(HALIFAX_TZ).weekday()
-        current_time = datetime.now(HALIFAX_TZ).time()
+        current_day = datetime.now().weekday()
+        current_time = datetime.now().time()
         
         # Build ORDER BY clause
         order_by = "ORDER BY s.name"
@@ -93,14 +89,12 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
                     if isinstance(open_t, time):
                         open_time = open_t
                     else:
-                        open_str = str(open_t).rstrip(':').split(':')
-                        open_time = time(int(open_str[0]), int(open_str[1]))
+                        open_time = datetime.strptime(str(open_t)[:5], "%H:%M").time()
                     
                     if isinstance(close_t, time):
                         close_time = close_t
                     else:
-                        close_str = str(close_t).rstrip(':').split(':')
-                        close_time = time(int(close_str[0]), int(close_str[1]))
+                        close_time = datetime.strptime(str(close_t)[:5], "%H:%M").time()
                     
                     is_open = open_time <= current_time <= close_time
                     
@@ -111,8 +105,8 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
                         status = f"Opens at {open_time.strftime('%H:%M')}"
                         next_change = open_time.strftime("%H:%M")
                     else:
-                        status = f"Opens at {open_time.strftime('%H:%M')}"
-                        next_change = open_time.strftime("%H:%M")
+                        status = f"Closes at {close_time.strftime('%H:%M')}"
+                        next_change = close_time.strftime("%H:%M")
                 except Exception:
                     status = "Unknown"
             elif is_closed:
@@ -199,8 +193,8 @@ def get_shop_by_id(shop_id):
         shop_id_db, name, category, description, terminal, gate, location_description = row
         
         # Get today's hours
-        current_day = datetime.now(HALIFAX_TZ).weekday()
-        current_time = datetime.now(HALIFAX_TZ).time()
+        current_day = datetime.now().weekday()
+        current_time = datetime.now().time()
         
         hours_query = """
             SELECT open_time, close_time, is_closed
@@ -258,8 +252,8 @@ def get_shop_by_id(shop_id):
                     "open_time": open_time.strftime("%H:%M") if isinstance(open_time, time) else str(open_time)[:5],
                     "close_time": close_time.strftime("%H:%M") if isinstance(close_time, time) else str(close_time)[:5],
                     "is_open": is_open,
-                    "status": "Open now" if is_open else f"Opens at {open_time.strftime('%H:%M') if isinstance(open_time, time) else str(open_time)[:5]}",
-                    "next_change": (close_time.strftime("%H:%M") if isinstance(close_time, time) else str(close_time)[:5]) if is_open else (open_time.strftime("%H:%M") if isinstance(open_time, time) else str(open_time)[:5])
+                    "status": "Open now" if is_open else f"Closes at {close_time.strftime('%H:%M') if isinstance(close_time, time) else str(close_time)[:5]}",
+                    "next_change": close_time.strftime("%H:%M") if isinstance(close_time, time) else str(close_time)[:5]
                 }
             elif is_closed:
                 today_hours["status"] = "Closed today"
@@ -572,7 +566,7 @@ def get_shop_items(shop_id, search=None, category_id=None, min_price=None,
             order_by = "ORDER BY i.base_price DESC"
         
         query = f"""
-            SELECT item_id, name, base_price, description, availability, stock_quantity, image_url
+            SELECT item_id, name, base_price, description, availability
             FROM items i
             {where_clause}
             {order_by}
@@ -582,38 +576,13 @@ def get_shop_items(shop_id, search=None, category_id=None, min_price=None,
         rows = cur.fetchall()
         
         items = []
-        for item_id, name, price, desc, avail, stock_qty, image_url in rows:
-            # Get variants for this item
-            variants_query = """
-                SELECT variant_type, variant_value, price_adjustment
-                FROM item_variants
-                WHERE item_id = %s
-                ORDER BY variant_type, variant_value
-            """
-            cur.execute(variants_query, (item_id,))
-            variant_rows = cur.fetchall()
-            
-            variants = []
-            variant_types_set = set()
-            for var_type, var_value, price_adj in variant_rows:
-                variant_types_set.add(var_type)
-                variants.append({
-                    "variant_type": var_type,
-                    "variant_value": var_value,
-                    "price_adjustment": float(price_adj) if price_adj else 0.0,
-                    "final_price": float(price) + (float(price_adj) if price_adj else 0.0)
-                })
-            
+        for item_id, name, price, desc, avail in rows:
             items.append({
                 "item_id": item_id,
                 "name": name,
                 "base_price": float(price) if price else 0.0,
                 "description": desc,
-                "availability": avail,
-                "stock_quantity": stock_qty,
-                "image_url": image_url, 
-                "variants": variants,
-                "variant_types": list(variant_types_set)
+                "availability": avail
             })
         
         cur.close()

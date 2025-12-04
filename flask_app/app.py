@@ -402,4 +402,3 @@ def save_subscription(ticket_no, flight_id, expo_token):
 # Import shop routes at the end to avoid circular import
 # The app object must be created first before shop.py can import it
 import flask_app.shop  # noqa: E402
-import flask_app.booking  # noqa: E402

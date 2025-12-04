@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { Item } from '../../types/shops';
 import { formatPrice } from '../../utils/shopHelpers';
@@ -12,7 +12,7 @@ interface ItemCardProps {
 
 export default function ItemCard({ item, onPress }: ItemCardProps) {
   const isAvailable = item.availability !== 'Out of Stock';
-  
+
   return (
     <TouchableOpacity
       style={[styles.card, !isAvailable && styles.cardDisabled]}
@@ -21,22 +21,17 @@ export default function ItemCard({ item, onPress }: ItemCardProps) {
       disabled={!isAvailable}
     >
       <View style={styles.imageContainer}>
-        {item.imageUrl ? (
-          <Image 
-            source={{ uri: item.imageUrl }} 
-            style={styles.itemImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <FontAwesome name="shopping-basket" size={28} color="#0C2340" />
-        )}
+        <FontAwesome name="shopping-basket" size={28} color="#0C2340" />
       </View>
+
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
           <StatusBadge status={item.availability} size="small" />
         </View>
+
         <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
+
         <View style={styles.footer}>
           <Text style={styles.price}>{formatPrice(item.basePrice, item.currency)}</Text>
           {item.variantTypes && item.variantTypes.length > 0 && (
@@ -48,11 +43,9 @@ export default function ItemCard({ item, onPress }: ItemCardProps) {
           )}
           <FontAwesome name="chevron-right" size={14} color="#ccc" style={styles.chevron} />
         </View>
-        {item.availability === 'Low Stock' && item.stockQuantity !== undefined && (
-          <Text style={styles.stockWarning}>Only {item.stockQuantity} left!</Text>
-        )}
-        {item.availability === 'Out of Stock' && (
-          <Text style={styles.outOfStock}>Out of stock</Text>
+
+        {item.availability === 'Low Stock' && (
+          <Text style={styles.stockWarning}>Low stock!</Text>
         )}
       </View>
     </TouchableOpacity>
@@ -62,8 +55,7 @@ export default function ItemCard({ item, onPress }: ItemCardProps) {
 const styles = StyleSheet.create({
   card: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3, elevation: 2 },
   cardDisabled: { opacity: 0.6 },
-  imageContainer: { width: 70, height: 70, borderRadius: 10, backgroundColor: '#f5f5f5', justifyContent: 'center', alignItems: 'center', marginRight: 12, overflow: 'hidden' },
-  itemImage: { width: 70, height: 70, borderRadius: 10 },
+  imageContainer: { width: 70, height: 70, borderRadius: 10, backgroundColor: '#f5f5f5', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   content: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4, gap: 8 },
   itemName: { fontSize: 15, fontWeight: '600', color: '#0C2340', flex: 1 },
@@ -74,5 +66,4 @@ const styles = StyleSheet.create({
   optionsText: { fontSize: 10, color: '#2E7D32', fontWeight: '600' },
   chevron: { marginLeft: 'auto' },
   stockWarning: { fontSize: 11, color: '#E65100', fontWeight: '500', marginTop: 4 },
-  outOfStock: { fontSize: 11, color: '#D32F2F', fontWeight: '500', marginTop: 4 }
 });

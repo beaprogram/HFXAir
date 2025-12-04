@@ -19,7 +19,7 @@ export default function ShopsScreen({ showHeader = true }: ShopsScreenProps) {
 
   const { shops, loading: shopsLoading, error: shopsError } = useShops();
   const { shop: selectedShop } = useShop(selectedShopId);
-  const { items: shopItems, refetch: refetchItems } = useItems(selectedShopId);
+  const { items: shopItems, updateItemAvailability } = useItems(selectedShopId);
   const { bookings, activeCount: activeBookingsCount, createBooking, cancelBooking } = useBookings();
 
   const selectedItem = selectedItemId ? shopItems.find(i => i.id === selectedItemId) || null : null;
@@ -66,16 +66,14 @@ export default function ShopsScreen({ showHeader = true }: ShopsScreenProps) {
   const handleBook = useCallback(async (bookingData: Parameters<typeof createBooking>[0]) => {
     const result = await createBooking(bookingData);
     if (result.success && result.booking) {
-      refetchItems(); // Refresh items to update stock
       return result.booking;
     }
     throw new Error(result.error || 'Failed to create reservation');
-  }, [createBooking, refetchItems]);
+  }, [createBooking]);
 
   const handleCancelBooking = useCallback(async (bookingId: string) => {
     await cancelBooking(bookingId);
-    refetchItems(); // Refresh items to update stock
-  }, [cancelBooking, refetchItems]);
+  }, [cancelBooking]);
 
   const handleRebookItem = useCallback((shopId: string, itemId: string) => {
     setSelectedShopId(shopId);

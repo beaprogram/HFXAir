@@ -20,18 +20,18 @@ export const getShopStatusText = (shop: Shop): { text: string; isOpen: boolean }
   const { todayHours } = shop;
   if (todayHours.isOpen) {
     return {
-      text: `Closes ${formatTime(todayHours.closeTime)}`,
+      text: `Open now · Closes ${formatTime(todayHours.closeTime)}`,
       isOpen: true,
     };
   }
   if (todayHours.nextChange) {
     return {
-      text: `Opens ${formatTime(todayHours.nextChange)}`,
+      text: `Closed · Opens ${todayHours.nextChange}`,
       isOpen: false,
     };
   }
   return {
-    text: `Opens ${formatTime(todayHours.openTime)}`,
+    text: `Closed · Opens ${formatTime(todayHours.openTime)}`,
     isOpen: false,
   };
 };
