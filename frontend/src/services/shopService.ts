@@ -15,7 +15,7 @@ import { mockShops, mockItems } from '../data/mockShopsData';
 import { generatePickupCode, calculateExpiryTime, getBookingStatus } from '../utils/shopHelpers';
 import axiosProvider from './axiosProvider';
 
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 const API_BASE_URL = '';
 
 const ENDPOINTS = {

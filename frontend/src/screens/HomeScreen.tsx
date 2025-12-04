@@ -29,7 +29,7 @@ const tiles: TileData[] = [
   { id: 'about', label: 'About', icon: 'info-circle', accessibilityLabel: 'About Halifax Stanfield Airport' },
 ];
 
-export default function HomeScreen({ userData, onLogout }: HomeScreenProps) {
+export default function HomeScreen({ userData: _userData, onLogout }: HomeScreenProps) {
   const [selectedTab, setSelectedTab] = useState('arrivals');
 
   const renderContent = () => {
@@ -72,8 +72,22 @@ export default function HomeScreen({ userData, onLogout }: HomeScreenProps) {
       <StatusBar barStyle="light-content" backgroundColor="#0C2340" />
       
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Halifax Stanfield</Text>
-        <Text style={styles.headerSubtitle}>International Airport</Text>
+        <View style={styles.headerContent}>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>Halifax Stanfield</Text>
+            <Text style={styles.headerSubtitle}>International Airport</Text>
+          </View>
+          {onLogout && (
+            <TouchableOpacity 
+              style={styles.logoutButton} 
+              onPress={onLogout}
+              accessibilityLabel="Logout"
+              accessibilityRole="button"
+            >
+              <FontAwesome name="sign-out" size={18} color="#fff" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
       
       <View style={styles.mainContent}>
@@ -120,6 +134,25 @@ const styles = StyleSheet.create({
     paddingBottom: 20, 
     paddingHorizontal: 20, 
     alignItems: 'center' 
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  headerTextContainer: {
+    alignItems: 'center',
+  },
+  logoutButton: {
+    position: 'absolute',
+    right: 0,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: { 
     fontSize: 24, 
