@@ -28,8 +28,9 @@ test:
   script:
     - cd $CI_PROJECT_DIR/flask_app
     - source /home/student/venv/bin/activate
-    - pip install pytest
-    - pytest tests/ -v --tb=short
+    - pip install pytest pytest-cov
+    - pytest tests/ -v --tb=short --cov=. --cov-report=term
+  coverage: '/TOTAL.*\s+(\d+%)$/'
   only:
     - main
   needs:
