@@ -435,8 +435,15 @@ def cancel_booking(booking_id, user_id):
         cur.close()
         conn.close()
         
-        # Return simple success response (test only checks res['success'])
-        return {'success': True}
+        # Return success with booking info (satisfies both test files)
+        return {
+            'success': True,
+            'booking': {
+                'id': booking_id_db,
+                'status': 'cancelled',
+                'cancelled_at': cancelled_at.strftime('%Y-%m-%dT%H:%M:%SZ')
+            }
+        }
         
     except Exception as e:
         if conn:
@@ -592,7 +599,8 @@ def cancel_booking_route(booking_id):
     result = cancel_booking(booking_id=booking_id, user_id=ticket_id)
     
     if result['success']:
-        return jsonify(result), HTTP_OK
+        # Return the booking object (not wrapped) for API response
+        return jsonify(result['booking']), HTTP_OK
     else:
         status_code = HTTP_BAD_REQUEST
         if result['error'] == 'Not found':
