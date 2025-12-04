@@ -92,6 +92,58 @@ const transformItem = (apiItem: ApiItem, shopId: string, category: string = 'Gen
   })),
 });
 
+// Transform API booking response to frontend Booking type
+const transformBooking = (apiBooking: any): Booking => {
+  const booking: any = {
+    id: String(apiBooking.id),
+    itemId: String(apiBooking.item_id),
+    shopId: String(apiBooking.shop_id),
+    quantity: apiBooking.quantity || 1,
+    selectedVariants: apiBooking.selected_variants,
+    totalPrice: apiBooking.total_price || 0,
+    status: apiBooking.status === 'active' ? 'Active' : 
+            apiBooking.status === 'cancelled' ? 'Cancelled' : 
+            apiBooking.status === 'expired' ? 'Expired' : 
+            apiBooking.status === 'picked_up' ? 'Picked Up' : 'Active',
+    createdAt: new Date(apiBooking.created_at),
+    expiresAt: new Date(apiBooking.expires_at),
+    pickupCode: apiBooking.pickup_code || '',
+    cancelledAt: apiBooking.cancelled_at ? new Date(apiBooking.cancelled_at) : undefined,
+  };
+
+  if (apiBooking.item) {
+    booking.item = {
+      id: String(apiBooking.item.id),
+      shopId: String(apiBooking.shop_id),
+      name: apiBooking.item.name,
+      description: apiBooking.item.description || '',
+      basePrice: apiBooking.item.base_price || 0,
+      currency: 'CAD',
+      category: 'General',
+      availability: transformAvailability(apiBooking.item.availability || 'in_stock'),
+      variantTypes: [],
+      variants: [],
+    };
+  }
+
+  if (apiBooking.shop) {
+    booking.shop = {
+      id: String(apiBooking.shop.id),
+      name: apiBooking.shop.name,
+      category: '',
+      description: '',
+      location: apiBooking.shop.location || '',
+      terminal: apiBooking.shop.terminal || '',
+      gate: apiBooking.shop.gate || null,
+      todayHours: { openTime: '', closeTime: '', isOpen: true, status: '', nextChange: null },
+      exceptionHours: [],
+      weeklyHours: [],
+    };
+  }
+
+  return booking as Booking;
+};
+
 export interface ServiceResponse<T> {
   data: T | null;
   error: string | null;
@@ -322,7 +374,8 @@ export const BookingService = {
 
     try {
       const response = await axiosProvider.get(ENDPOINTS.BOOKINGS);
-      return { data: response.data.bookings || [], error: null, success: true };
+      const bookings = (response.data.bookings || []).map(transformBooking);
+      return { data: bookings, error: null, success: true };
     } catch (error: any) {
       return {
         data: null,
@@ -395,7 +448,8 @@ export const BookingService = {
         quantity: params.quantity,
         selected_variants: params.selectedVariants,
       });
-      return { data: response.data, error: null, success: true };
+      const booking = transformBooking(response.data);
+      return { data: booking, error: null, success: true };
     } catch (error: any) {
       return {
         data: null,
@@ -435,7 +489,8 @@ export const BookingService = {
 
     try {
       const response = await axiosProvider.post(ENDPOINTS.CANCEL_BOOKING(bookingId), {});
-      return { data: response.data, error: null, success: true };
+      const booking = transformBooking(response.data);
+      return { data: booking, error: null, success: true };
     } catch (error: any) {
       return {
         data: null,
@@ -457,4 +512,5 @@ export const BookingService = {
     return { data: 0, error: null, success: true };
   },
 };
+
 const simulateDelay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
