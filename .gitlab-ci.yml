@@ -14,7 +14,7 @@ test:
     - pip install -r requirements.txt --quiet
     - pytest tests/ -v --tb=short
   only:
-    - main
+    - refactor/shopping-page-components-integration
 
 # ==================== DEPLOY ====================
 deploy:
@@ -23,12 +23,12 @@ deploy:
     - vm-runner
   script:
     - cd /home/student/HFXAIR/group01
-    - git fetch origin main
-    - git reset --hard origin/main
+    - git fetch origin refactor/shopping-page-components-integration
+    - git reset --hard origin/refactor/shopping-page-components-integration
     - sudo systemctl restart hfxair.service
     - echo "Deployment complete!"
   only:
-    - main
+    - refactor/shopping-page-components-integration
   needs:
     - test
 
@@ -52,7 +52,7 @@ run-dpy:
     paths:
       - smells/
   only:
-    - main
+    - refactor/shopping-page-components-integration
   needs:
     - deploy
 
@@ -67,6 +67,6 @@ submit-dcode:
     - pip install requests --quiet
     - python3 $CI_PROJECT_DIR/.quality/push_to_dcode.py $DCODE_PROJECT_ID $DCODE_API_KEY $CI_PROJECT_DIR/smells/ $CI_COMMIT_SHA
   only:
-    - main
+    - refactor/shopping-page-components-integration
   needs:
     - run-dpy
