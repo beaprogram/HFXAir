@@ -7,7 +7,6 @@ import DeparturesScreen from './tabs/DeparturesScreen';
 import ShopsScreen from './tabs/ShopsScreen';
 import ParkingScreen from './tabs/ParkingScreen';
 import AboutScreen from './tabs/AboutScreen';
-import MapScreen from './tabs/MapScreen';
 
 interface HomeScreenProps {
   userData?: {ticketNumber: string, flightNumber: string} | null;
@@ -45,7 +44,12 @@ export default function HomeScreen({ userData, onLogout }: HomeScreenProps) {
         return <ShopsScreen showHeader={false} />;
       
       case 'map':
-        return <MapScreen />;
+        return (
+          <View style={styles.emptyContent}>
+            <FontAwesome name="map" size={48} color="#ccc" />
+            <Text style={styles.emptyText}>Airport Map - Coming Soon</Text>
+          </View>
+        );
       
       case 'parking':
         return <ParkingScreen showHeader={false} />;
