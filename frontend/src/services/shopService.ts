@@ -322,7 +322,7 @@ export const BookingService = {
 
     try {
       const response = await axiosProvider.get(ENDPOINTS.BOOKINGS);
-      return { data: response.data, error: null, success: true };
+      return { data: response.data.bookings || [], error: null, success: true };
     } catch (error: any) {
       return {
         data: null,

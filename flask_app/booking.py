@@ -601,4 +601,4 @@ def cancel_booking_route(booking_id):
             status_code = 404
         elif result['error'] == 'Forbidden':
             status_code = 403
-        return jsonify(result), status_codes
+        return jsonify(result), status_code
