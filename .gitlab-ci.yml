@@ -9,7 +9,7 @@ test:
   tags:
     - vm-runner
   script:
-    - cd /home/student/HFXAIR/group01/flask_app
+    - cd $CI_PROJECT_DIR/flask_app
     - source /home/student/venv/bin/activate
     - pip install -r requirements.txt --quiet
     - pytest tests/ -v --tb=short

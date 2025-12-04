@@ -576,7 +576,7 @@ def get_shop_items(shop_id, search=None, category_id=None, min_price=None,
         rows = cur.fetchall()
         
         items = []
-        for item_id, name, price, desc, avail in rows:
+        for item_id, name, price, desc, avail, stock_qty in rows:
             items.append({
                 "item_id": item_id,
                 "name": name,
