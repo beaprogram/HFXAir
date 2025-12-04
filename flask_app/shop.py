@@ -133,7 +133,7 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
                     logging.error(f"Error parsing shop hours: {e}")
                     status = "Unknown"
             elif is_closed:
-                status = "Closed"
+                status = "Closed today"
             else:
                 status = "Unknown"
             
@@ -147,7 +147,12 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
                 "location": loc,
                 "status": status,
                 "is_open": is_open,
-                "next_change": next_change
+                "next_change": next_change,
+                "today_hours": {
+                    "status": status,
+                    "is_open": is_open,
+                    "next_change": next_change
+                }
             }
             
             # Apply open_now filter if specified
@@ -175,16 +180,24 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
             filters_applied["terminal"] = terminal
         if gate:
             filters_applied["gate"] = gate
+        if sort:
+            filters_applied["sort"] = sort
         
         return {
             "shops": shops,
             "count": len(shops),
+            "total": len(shops),
             "filters_applied": filters_applied
         }
         
     except Exception as e:
         logging.error(f"Error fetching shops: {e}")
-        return None
+        return {
+            "shops": [],
+            "count": 0,
+            "total": 0,
+            "filters_applied": {}
+        }
 
 
 def get_shop_by_id(shop_id):
@@ -340,7 +353,8 @@ def get_shop_hours(shop_id):
         return {
             "shop_id": shop_id_db,
             "shop_name": shop_name,
-            "hours": weekly_hours
+            "weekly_hours": weekly_hours,
+            "hours": weekly_hours  # Keep both for backwards compatibility
         }
         
     except Exception as e:
@@ -349,20 +363,21 @@ def get_shop_hours(shop_id):
 
 
 def get_shop_categories():
-    """Get all unique shop categories"""
+    """Get all unique shop categories with counts"""
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
         cur.execute("""
-            SELECT DISTINCT category 
+            SELECT category, COUNT(*) as count
             FROM shops 
             WHERE category IS NOT NULL 
+            GROUP BY category
             ORDER BY category
         """)
         
         rows = cur.fetchall()
-        categories = [row[0] for row in rows]
+        categories = [{"name": row[0], "count": row[1]} for row in rows]
         
         cur.close()
         conn.close()
@@ -381,7 +396,7 @@ def get_shop_catalog(shop_id, include_items=True):
         cur = conn.cursor()
         
         # Check if shop exists
-        cur.execute("SELECT shop_id, name, description FROM shops WHERE shop_id = %s", (shop_id,))
+        cur.execute("SELECT shop_id, name FROM shops WHERE shop_id = %s", (shop_id,))
         shop_row = cur.fetchone()
         
         if not shop_row:
@@ -389,7 +404,7 @@ def get_shop_catalog(shop_id, include_items=True):
             conn.close()
             return None
         
-        shop_id_db, shop_name, shop_desc = shop_row
+        shop_id_db, shop_name = shop_row
         
         # Get categories for this shop
         cur.execute("""
@@ -412,7 +427,7 @@ def get_shop_catalog(shop_id, include_items=True):
             if include_items:
                 # Get items for this category
                 cur.execute("""
-                    SELECT item_id, name, description, base_price, stock_quantity, availability
+                    SELECT item_id, name, base_price, description
                     FROM items
                     WHERE shop_id = %s AND category_id = %s
                     ORDER BY name
@@ -420,14 +435,12 @@ def get_shop_catalog(shop_id, include_items=True):
                 
                 item_rows = cur.fetchall()
                 items = []
-                for item_id, item_name, item_desc, price, stock, avail in item_rows:
+                for item_id, item_name, price, item_desc in item_rows:
                     items.append({
                         "item_id": item_id,
                         "name": item_name,
-                        "description": item_desc,
                         "base_price": float(price) if price else None,
-                        "stock_quantity": stock,
-                        "availability": avail
+                        "description": item_desc
                     })
                 
                 category["items"] = items
@@ -441,7 +454,6 @@ def get_shop_catalog(shop_id, include_items=True):
         return {
             "shop_id": shop_id_db,
             "shop_name": shop_name,
-            "shop_description": shop_desc,
             "categories": categories
         }
         
@@ -506,14 +518,12 @@ def get_shop_items(shop_id, search=None, category_id=None, min_price=None, max_p
             SELECT 
                 i.item_id,
                 i.name,
-                i.description,
                 i.base_price,
-                i.stock_quantity,
+                i.description,
                 i.availability,
-                i.category_id,
-                ic.category_name
+                i.stock_quantity,
+                i.image_url
             FROM items i
-            LEFT JOIN item_categories ic ON i.category_id = ic.category_id
             {where_clause}
             {order_by}
         """
@@ -523,18 +533,34 @@ def get_shop_items(shop_id, search=None, category_id=None, min_price=None, max_p
         
         items = []
         for row in rows:
-            item_id, name, desc, price, stock, avail, cat_id, cat_name = row
+            item_id, name, price, desc, avail, stock, image_url = row
+            
+            # Get variants for this item
+            cur.execute("""
+                SELECT variant_type, variant_value, price_adjustment
+                FROM product_variants
+                WHERE item_id = %s
+                ORDER BY variant_type, variant_value
+            """, (item_id,))
+            
+            variant_rows = cur.fetchall()
+            variants = []
+            for var_type, var_value, price_adj in variant_rows:
+                variants.append({
+                    "variant_type": var_type,
+                    "variant_value": var_value,
+                    "price_adjustment": float(price_adj) if price_adj else 0.0
+                })
+            
             items.append({
                 "item_id": item_id,
                 "name": name,
-                "description": desc,
                 "base_price": float(price) if price else None,
-                "stock_quantity": stock,
+                "description": desc,
                 "availability": avail,
-                "category": {
-                    "category_id": cat_id,
-                    "category_name": cat_name
-                } if cat_id else None
+                "stock_quantity": stock,
+                "image_url": image_url,
+                "variants": variants
             })
         
         cur.close()
@@ -562,17 +588,9 @@ def get_item_by_id(item_id):
             SELECT 
                 i.item_id,
                 i.name,
-                i.description,
                 i.base_price,
-                i.stock_quantity,
-                i.availability,
-                i.shop_id,
-                i.category_id,
-                s.name as shop_name,
-                ic.category_name
+                i.description
             FROM items i
-            LEFT JOIN shops s ON i.shop_id = s.shop_id
-            LEFT JOIN item_categories ic ON i.category_id = ic.category_id
             WHERE i.item_id = %s
         """
         
@@ -584,24 +602,25 @@ def get_item_by_id(item_id):
             conn.close()
             return None
         
-        item_id, name, desc, price, stock, avail, shop_id, cat_id, shop_name, cat_name = row
+        item_id, name, price, desc = row
         
         # Get variants if any
         cur.execute("""
-            SELECT variant_id, variant_name, additional_price, stock_quantity
+            SELECT variant_type, variant_value, price_adjustment
             FROM product_variants
             WHERE item_id = %s
-            ORDER BY variant_name
+            ORDER BY variant_type, variant_value
         """, (item_id,))
         
         variant_rows = cur.fetchall()
         variants = []
-        for var_id, var_name, add_price, var_stock in variant_rows:
+        variant_types = set()
+        for var_type, var_value, add_price in variant_rows:
+            variant_types.add(var_type)
             variants.append({
-                "variant_id": var_id,
-                "variant_name": var_name,
-                "additional_price": float(add_price) if add_price else 0.0,
-                "stock_quantity": var_stock
+                "variant_type": var_type,
+                "variant_value": var_value,
+                "price_adjustment": float(add_price) if add_price else 0.0
             })
         
         cur.close()
@@ -610,19 +629,10 @@ def get_item_by_id(item_id):
         return {
             "item_id": item_id,
             "name": name,
-            "description": desc,
             "base_price": float(price) if price else None,
-            "stock_quantity": stock,
-            "availability": avail,
-            "shop": {
-                "shop_id": shop_id,
-                "shop_name": shop_name
-            } if shop_id else None,
-            "category": {
-                "category_id": cat_id,
-                "category_name": cat_name
-            } if cat_id else None,
-            "variants": variants
+            "description": desc,
+            "variants": variants,
+            "variant_types": list(variant_types)
         }
         
     except Exception as e:
@@ -794,7 +804,7 @@ def get_item_details(item_id):
 
 @app.get("/shops/<int:shop_id>/categories")
 def list_shop_item_categories(shop_id):
-    """GET /shops/<shop_id>/categories - Get item categories for a shop"""
+    """GET /shops/<int:shop_id>/categories - Get item categories for a shop"""
     categories = get_shop_item_categories(shop_id)
     if categories is None:
         return jsonify({"error": "Shop not found"}), HTTP_NOT_FOUND
