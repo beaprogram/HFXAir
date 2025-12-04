@@ -4,6 +4,9 @@ stages:
   - deploy
   - code-quality
 
+variables:
+  PYTHONPATH: "${CI_PROJECT_DIR}"
+
 # ==================== BUILD ====================
 build:
   stage: build
@@ -13,7 +16,7 @@ build:
     - cd $CI_PROJECT_DIR/flask_app
     - source /home/student/venv/bin/activate
     - pip install -r requirements.txt
-    - python -c "from app import app; print('App loads successfully')"
+    - python -c "from flask_app.app import app; print('App loads successfully')"
   only:
     - refactor/shopping-page-components-integration
 
@@ -25,6 +28,7 @@ test:
   script:
     - cd $CI_PROJECT_DIR/flask_app
     - source /home/student/venv/bin/activate
+    - pip install pytest
     - pytest tests/ -v --tb=short
   only:
     - refactor/shopping-page-components-integration
