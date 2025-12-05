@@ -19,7 +19,7 @@ from flask_app.constants import (
     REMINDER_WINDOW_FINAL_MIN,
     REMINDER_WINDOW_FINAL_MAX,
     FLIGHT_CLEANUP_MINUTES,
-    SCHEDULER_CHECK_INTERVAL_MINUTES,
+    SCHED_CHECK_INTERVAL,
     DB_CONNECT_TIMEOUT_SECONDS
 )
 
@@ -261,7 +261,7 @@ def start_background_jobs(app):
         scheduler.add_job(
             func=check_departure_reminders,
             trigger="interval",
-            minutes=SCHEDULER_CHECK_INTERVAL_MINUTES,
+            minutes=SCHED_CHECK_INTERVAL,
             id="departure_reminders",
             name="Check departure reminders",
             replace_existing=True
@@ -271,7 +271,7 @@ def start_background_jobs(app):
         scheduler.add_job(
             func=check_flight_updates,
             trigger="interval",
-            minutes=SCHEDULER_CHECK_INTERVAL_MINUTES,
+            minutes=SCHED_CHECK_INTERVAL,
             id="flight_updates",
             name="Check flight updates",
             replace_existing=True
@@ -281,7 +281,7 @@ def start_background_jobs(app):
         if not scheduler.running:
             scheduler.start()
             logger.info("Background scheduler started successfully")
-            logger.info(f"Jobs: departure_reminders (every {SCHEDULER_CHECK_INTERVAL_MINUTES} min), flight_updates (every {SCHEDULER_CHECK_INTERVAL_MINUTES} min)")
+            logger.info(f"Jobs: departure_reminders (every {SCHED_CHECK_INTERVAL} min), flight_updates (every {SCHED_CHECK_INTERVAL} min)")
         
         return scheduler
         

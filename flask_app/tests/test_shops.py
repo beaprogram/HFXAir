@@ -18,11 +18,17 @@ from flask_app.tests.test_constants import (
     TEST_PRICE_MIN,
     TEST_PRICE_MAX,
     TEST_PRICE_COFFEE,
+    TEST_PRICE_ITEM_BASIC,
+    TEST_PRICE_ADJUST_SIZE,
+    TEST_STOCK_FULL,
     TEST_VARIANT_COUNT,
     TEST_CATEGORY_COUNT,
     TEST_CATEGORY_BEVERAGES_COUNT,
     TEST_CATEGORY_FOOD_COUNT,
-    TEST_CATEGORY_DESSERTS_COUNT
+    TEST_CATEGORY_DESSERTS_COUNT,
+    TEST_SHOP_CAT_FOOD_BEV_COUNT,
+    TEST_SHOP_CAT_RETAIL_COUNT,
+    TEST_SHOP_CAT_SERVICES_COUNT
 )
 
 
@@ -226,7 +232,9 @@ def test_get_shops_with_multiple_filters(client, monkeypatch):
     import flask_app.shop as shop
     monkeypatch.setattr(shop, "get_shops", fake_get_shops)
 
-    response = client.get("/shops?category=Food&open_now=true&sort=name&terminal=Terminal%201")
+    response = client.get(
+        "/shops?category=Food&open_now=true&sort=name&terminal=Terminal%201"
+    )
     assert response.status_code == HTTP_OK
 
 
@@ -294,7 +302,7 @@ def test_get_shop_by_id_not_found(client, monkeypatch):
 def test_get_shop_by_id_invalid_id(client, monkeypatch):
     """Test GET /shops/<shop_id> - invalid ID format"""
     response = client.get("/shops/abc")
-    assert response.status_code == HTTP_NOT_FOUND  # Flask returns 404 for invalid int conversion
+    assert response.status_code == HTTP_NOT_FOUND
 
 
 def test_get_shop_hours_success(client, monkeypatch):
@@ -346,14 +354,11 @@ def test_get_shop_hours_not_found(client, monkeypatch):
 
 def test_get_shop_categories(client, monkeypatch):
     """Test GET /shops/categories"""
-    category_food_count = 15
-    category_retail_count = 12
-    category_services_count = 8
     sample_categories = {
         "categories": [
-            {"name": "Food & Beverage", "count": category_food_count},
-            {"name": "Retail", "count": category_retail_count},
-            {"name": "Services", "count": category_services_count}
+            {"name": "Food & Beverage", "count": TEST_SHOP_CAT_FOOD_BEV_COUNT},
+            {"name": "Retail", "count": TEST_SHOP_CAT_RETAIL_COUNT},
+            {"name": "Services", "count": TEST_SHOP_CAT_SERVICES_COUNT}
         ]
     }
 
@@ -369,7 +374,7 @@ def test_get_shop_categories(client, monkeypatch):
     assert "categories" in data
     assert len(data["categories"]) == TEST_CATEGORY_COUNT
     assert data["categories"][0]["name"] == "Food & Beverage"
-    assert data["categories"][0]["count"] == category_food_count
+    assert data["categories"][0]["count"] == TEST_SHOP_CAT_FOOD_BEV_COUNT
 
 
 def test_get_shop_categories_empty(client, monkeypatch):
@@ -388,7 +393,6 @@ def test_get_shop_categories_empty(client, monkeypatch):
 
 def test_get_shop_catalog_success(client, monkeypatch):
     """Test GET /shops/<shop_id>/catalog"""
-    catalog_item_price = 2.49
     sample_catalog = {
         "shop_id": TEST_SHOP_ID,
         "shop_name": "Tim Hortons",
@@ -400,7 +404,7 @@ def test_get_shop_catalog_success(client, monkeypatch):
                     {
                         "item_id": TEST_ITEM_ID,
                         "name": "Coffee",
-                        "base_price": catalog_item_price
+                        "base_price": TEST_PRICE_ITEM_BASIC
                     }
                 ]
             }
@@ -475,7 +479,6 @@ def test_get_shop_catalog_not_found(client, monkeypatch):
 
 def test_get_shop_items_success(client, monkeypatch):
     """Test GET /shops/<shop_id>/items"""
-    stock_quantity = 50
     sample_items = {
         "shop_id": TEST_SHOP_ID,
         "shop_name": "Tim Hortons",
@@ -486,7 +489,7 @@ def test_get_shop_items_success(client, monkeypatch):
                 "base_price": TEST_PRICE_COFFEE,
                 "description": "Hot brewed coffee",
                 "availability": "in_stock",
-                "stock_quantity": stock_quantity,
+                "stock_quantity": TEST_STOCK_FULL,
                 "image_url": "https://example.com/coffee.jpg",
                 "variants": [],
                 "variant_types": []
@@ -776,25 +779,23 @@ def test_get_shop_items_not_found(client, monkeypatch):
 
 def test_get_item_by_id_success(client, monkeypatch):
     """Test GET /items/<item_id>"""
-    item_base_price = 2.49
-    price_adjustment_large = 1.00
     sample_item = {
         "item_id": TEST_ITEM_ID,
         "name": "Coffee",
-        "base_price": item_base_price,
+        "base_price": TEST_PRICE_ITEM_BASIC,
         "description": "Fresh brewed coffee",
         "variants": [
             {
                 "variant_type": "Size",
                 "variant_value": "Small",
                 "price_adjustment": 0.00,
-                "final_price": item_base_price
+                "final_price": TEST_PRICE_ITEM_BASIC
             },
             {
                 "variant_type": "Size",
                 "variant_value": "Large",
-                "price_adjustment": price_adjustment_large,
-                "final_price": item_base_price + price_adjustment_large
+                "price_adjustment": TEST_PRICE_ADJUST_SIZE,
+                "final_price": TEST_PRICE_ITEM_BASIC + TEST_PRICE_ADJUST_SIZE
             }
         ],
         "variant_types": ["Size"]
@@ -834,7 +835,7 @@ def test_get_item_by_id_not_found(client, monkeypatch):
 def test_get_item_by_id_invalid_id(client, monkeypatch):
     """Test GET /items/<item_id> - invalid ID format"""
     response = client.get("/items/abc")
-    assert response.status_code == HTTP_NOT_FOUND  # Flask returns 404 for invalid int conversion
+    assert response.status_code == HTTP_NOT_FOUND
 
 
 def test_get_shop_item_categories(client, monkeypatch):

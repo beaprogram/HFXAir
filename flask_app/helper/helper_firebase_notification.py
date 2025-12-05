@@ -12,7 +12,7 @@ from flask_app.constants import (
     HTTP_OK,
     FCM_BATCH_SIZE,
     EXPO_BATCH_SIZE,
-    NOTIFICATION_HTTP_TIMEOUT_SECONDS
+    NOTIF_HTTP_TIMEOUT
 )
 
 logger = logging.getLogger(__name__)
@@ -208,7 +208,7 @@ def notify_subscribers(ticket_no: str = None, flight_id: str = None, title: str 
                 })
 
             try:
-                resp = requests.post(expo_endpoint, json=messages, headers=headers, timeout=NOTIFICATION_HTTP_TIMEOUT_SECONDS)
+                resp = requests.post(expo_endpoint, json=messages, headers=headers, timeout=NOTIF_HTTP_TIMEOUT)
                 if resp.status_code == HTTP_OK:
                     # The Expo response contains tickets; assume success for delivered tickets
                     # We can't know exact delivered count without polling receipts; count all as sent here

@@ -121,6 +121,18 @@ TEST_CATEGORY_BEVERAGES_COUNT = 10
 TEST_CATEGORY_FOOD_COUNT = 5
 TEST_CATEGORY_DESSERTS_COUNT = 8
 
+# Shop category counts (for /shops/categories endpoint)
+TEST_SHOP_CAT_FOOD_BEV_COUNT = 15
+TEST_SHOP_CAT_RETAIL_COUNT = 12
+TEST_SHOP_CAT_SERVICES_COUNT = 8
+
+# =============================================================================
+# Test Data - Additional Prices
+# =============================================================================
+
+TEST_PRICE_ITEM_BASIC = 2.49
+TEST_PRICE_ADJUST_SIZE = 1.00
+
 # =============================================================================
 # Test Data - Stock Management
 # =============================================================================

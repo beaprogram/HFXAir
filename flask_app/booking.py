@@ -43,7 +43,7 @@ from flask_app.constants import (
     BOOKING_COL_ITEM_DESCRIPTION,
     BOOKING_COL_ITEM_BASE_PRICE,
     BOOKING_COL_ITEM_AVAILABILITY,
-    BOOKING_COL_ITEM_STOCK_QUANTITY,
+    BOOKING_COL_STOCK_QTY,
     BOOKING_COL_SHOP_NAME,
     BOOKING_COL_SHOP_LOCATION,
     BOOKING_COL_SHOP_TERMINAL,
@@ -212,7 +212,7 @@ def get_user_bookings(user_id, status=None):
                     'base_price': (float(row[BOOKING_COL_ITEM_BASE_PRICE])
                                   if row[BOOKING_COL_ITEM_BASE_PRICE] else None),
                     'availability': row[BOOKING_COL_ITEM_AVAILABILITY],
-                    'stock_quantity': row[BOOKING_COL_ITEM_STOCK_QUANTITY]
+                    'stock_quantity': row[BOOKING_COL_STOCK_QTY]
                 } if row[BOOKING_COL_ITEM_NAME] else None,
                 'shop': {
                     'id': row[BOOKING_COL_SHOP_ID],

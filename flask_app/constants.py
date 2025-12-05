@@ -89,7 +89,7 @@ BOOKING_COL_ITEM_NAME = 13
 BOOKING_COL_ITEM_DESCRIPTION = 14
 BOOKING_COL_ITEM_BASE_PRICE = 15
 BOOKING_COL_ITEM_AVAILABILITY = 16
-BOOKING_COL_ITEM_STOCK_QUANTITY = 17
+BOOKING_COL_STOCK_QTY = 17
 
 # Shop table columns (s.*)
 BOOKING_COL_SHOP_NAME = 18
@@ -106,7 +106,7 @@ FCM_BATCH_SIZE = 500  # Max FCM messages per batch
 EXPO_BATCH_SIZE = 100  # Max Expo messages per request
 
 # HTTP timeout
-NOTIFICATION_HTTP_TIMEOUT_SECONDS = 10  # Timeout for notification requests
+NOTIF_HTTP_TIMEOUT = 10  # Timeout for notification requests (seconds)
 
 # =============================================================================
 # Time & Scheduling Constants (for cron jobs)
@@ -129,7 +129,7 @@ REMINDER_WINDOW_FINAL_MAX = 6  # 5-min reminder window end
 FLIGHT_CLEANUP_MINUTES = -5  # Remove from cache if past this time
 
 # Scheduler intervals
-SCHEDULER_CHECK_INTERVAL_MINUTES = 1  # How often to run cron jobs
+SCHED_CHECK_INTERVAL = 1  # How often to run cron jobs (minutes)
 
 # =============================================================================
 # Date/Time Constants
@@ -186,3 +186,50 @@ SUCCESS_SUBSCRIBED = "Subscribed"
 
 # Default values
 DEFAULT_QUANTITY = 1  # Default booking quantity if not specified
+
+# =============================================================================
+# Flight Query Column Indices
+# =============================================================================
+
+# get_all_flights() query columns
+FLIGHT_COL_ID = 0
+FLIGHT_COL_NUMBER = 1
+FLIGHT_COL_AIRLINE = 2
+FLIGHT_COL_ORIGIN = 3
+FLIGHT_COL_DESTINATION = 4
+FLIGHT_COL_DEPARTURE = 5
+FLIGHT_COL_ACTUAL_DEPARTURE = 6
+FLIGHT_COL_STATUS = 7
+FLIGHT_COL_GATE = 8
+FLIGHT_COL_TERMINAL = 9
+
+# get_flight_by_id() query columns
+FLIGHT_DETAIL_NUMBER = 0
+FLIGHT_DETAIL_STATUS = 1
+FLIGHT_DETAIL_ORIGIN = 2
+FLIGHT_DETAIL_DEST = 3
+
+# get_arrivals() query columns
+ARRIVAL_COL_ID = 0
+ARRIVAL_COL_NUMBER = 1
+ARRIVAL_COL_AIRLINE = 2
+ARRIVAL_COL_ORIGIN = 3
+ARRIVAL_COL_DESTINATION = 4
+ARRIVAL_COL_SCHEDULED = 5
+ARRIVAL_COL_ACTUAL = 6
+ARRIVAL_COL_STATUS = 7
+ARRIVAL_COL_GATE = 8
+ARRIVAL_COL_TERMINAL = 9
+ARRIVAL_COL_BAGGAGE = 10
+
+# get_departures() query columns
+DEPART_COL_ID = 0
+DEPART_COL_NUMBER = 1
+DEPART_COL_AIRLINE = 2
+DEPART_COL_DESTINATION = 3
+DEPART_COL_SCHEDULED = 4
+DEPART_COL_ACTUAL = 5
+DEPART_COL_STATUS = 6
+DEPART_COL_GATE = 7
+DEPART_COL_TERMINAL = 8
+DEPART_COL_BOARDING = 9
