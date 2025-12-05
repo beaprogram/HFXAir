@@ -1,7 +1,24 @@
 stages:
+  - build
   - test
   - deploy
   - code-quality
+
+variables:
+  PYTHONPATH: "${CI_PROJECT_DIR}"
+
+# ==================== BUILD ====================
+build:
+  stage: build
+  tags:
+    - vm-runner
+  script:
+    - cd $CI_PROJECT_DIR/flask_app
+    - source /home/student/venv/bin/activate
+    - pip install -r requirements.txt
+    - python -c "from flask_app.app import app; print('App loads successfully')"
+  only:
+    - main
 
 # ==================== TEST ====================
 test:
@@ -9,12 +26,15 @@ test:
   tags:
     - vm-runner
   script:
-    - cd /home/student/HFXAIR/group01/flask_app
+    - cd $CI_PROJECT_DIR/flask_app
     - source /home/student/venv/bin/activate
-    - pip install -r requirements.txt --quiet
-    - pytest tests/ -v --tb=short
+    - pip install pytest pytest-cov
+    - pytest tests/ -v --tb=short --cov=. --cov-report=term
+  coverage: '/TOTAL.*\s+(\d+%)$/'
   only:
     - main
+  needs:
+    - build
 
 # ==================== DEPLOY ====================
 deploy:
@@ -22,9 +42,8 @@ deploy:
   tags:
     - vm-runner
   script:
-    - cd /home/student/HFXAIR/group01
-    - git fetch origin main
-    - git reset --hard origin/main
+    - echo "Syncing code to deployment directory..."
+    - rsync -av --delete --exclude='.git' --exclude='venv' --exclude='__pycache__' $CI_PROJECT_DIR/ /home/student/HFXAIR/group01/
     - sudo systemctl restart hfxair.service
     - echo "Deployment complete!"
   only:
