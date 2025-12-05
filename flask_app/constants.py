@@ -64,6 +64,40 @@ OUT_OF_STOCK_THRESHOLD = 0  # Items at or below this = "out of stock"
 BOOKING_EXPIRY_HOURS = 24  # Hours until booking expires
 
 # =============================================================================
+# Booking Query Column Indices (for get_user_bookings query results)
+# =============================================================================
+# These constants map to the SELECT columns in get_user_bookings() query
+# to avoid magic numbers when accessing row tuples
+
+# Booking table columns (b.*)
+BOOKING_COL_ID = 0
+BOOKING_COL_USER_ID = 1
+BOOKING_COL_ITEM_ID = 2
+BOOKING_COL_SHOP_ID = 3
+BOOKING_COL_QUANTITY = 4
+BOOKING_COL_TOTAL_PRICE = 5
+BOOKING_COL_STATUS = 6
+BOOKING_COL_PICKUP_CODE = 7
+BOOKING_COL_CREATED_AT = 8
+BOOKING_COL_EXPIRES_AT = 9
+BOOKING_COL_CANCELLED_AT = 10
+BOOKING_COL_PICKED_UP_AT = 11
+BOOKING_COL_SELECTED_VARIANTS = 12
+
+# Item table columns (i.*)
+BOOKING_COL_ITEM_NAME = 13
+BOOKING_COL_ITEM_DESCRIPTION = 14
+BOOKING_COL_ITEM_BASE_PRICE = 15
+BOOKING_COL_ITEM_AVAILABILITY = 16
+BOOKING_COL_ITEM_STOCK_QUANTITY = 17
+
+# Shop table columns (s.*)
+BOOKING_COL_SHOP_NAME = 18
+BOOKING_COL_SHOP_LOCATION = 19
+BOOKING_COL_SHOP_TERMINAL = 20
+BOOKING_COL_SHOP_GATE = 21
+
+# =============================================================================
 # Notification Constants
 # =============================================================================
 
@@ -100,6 +134,9 @@ SCHEDULER_CHECK_INTERVAL_MINUTES = 1  # How often to run cron jobs
 # =============================================================================
 # Date/Time Constants
 # =============================================================================
+
+# Days
+DAYS_IN_WEEK = 7
 
 # Days in months (for date calculations)
 DAYS_IN_FEB_LEAP = 29
@@ -149,25 +186,3 @@ SUCCESS_SUBSCRIBED = "Subscribed"
 
 # Default values
 DEFAULT_QUANTITY = 1  # Default booking quantity if not specified
-
-# =============================================================================
-# Example Usage
-# =============================================================================
-
-"""
-BEFORE REFACTORING:
-    return jsonify({"error": "Unauthorized"}), 401
-    if quantity < 1 or quantity > 3:
-        return {"error": "Invalid quantity"}
-    if stock <= 5:
-        status = "low_stock"
-
-AFTER REFACTORING:
-    from constants import HTTP_UNAUTHORIZED, MIN_BOOKING_QUANTITY, MAX_BOOKING_QUANTITY, LOW_STOCK_THRESHOLD
-    
-    return jsonify({"error": ERROR_UNAUTHORIZED}), HTTP_UNAUTHORIZED
-    if quantity < MIN_BOOKING_QUANTITY or quantity > MAX_BOOKING_QUANTITY:
-        return {"error": ERROR_INVALID_QUANTITY}
-    if stock <= LOW_STOCK_THRESHOLD:
-        status = "low_stock"
-"""

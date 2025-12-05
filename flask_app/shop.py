@@ -11,7 +11,8 @@ import pytz
 from flask_app.constants import (
     HTTP_OK,
     HTTP_BAD_REQUEST,
-    HTTP_NOT_FOUND
+    HTTP_NOT_FOUND,
+    DAYS_IN_WEEK
 )
 
 # Halifax timezone
@@ -40,7 +41,8 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
             where_conditions.append("s.gate = %s")
             params.append(gate)
         
-        where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+        where_clause = ("WHERE " + " AND ".join(where_conditions)
+                       if where_conditions else "")
         
         # Get current day of week (0=Monday, 6=Sunday)
         current_day = datetime.now(HALIFAX_TZ).weekday()
@@ -86,7 +88,8 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
         filters_applied = {}
         
         for row in rows:
-            shop_id, name, cat, desc, term, gate_val, loc, open_t, close_t, is_closed = row
+            (shop_id, name, cat, desc, term, gate_val,
+             loc, open_t, close_t, is_closed) = row
             
             # Calculate is_open status
             is_open = False
@@ -114,14 +117,24 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
                         status = "Open"
                         # Calculate next_change (closing time)
                         now = datetime.now(HALIFAX_TZ)
-                        close_datetime = now.replace(hour=close_time.hour, minute=close_time.minute, second=0, microsecond=0)
+                        close_datetime = now.replace(
+                            hour=close_time.hour,
+                            minute=close_time.minute,
+                            second=0,
+                            microsecond=0
+                        )
                         next_change = close_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
                     else:
                         is_open = False
                         status = "Closed"
                         # Calculate next_change (opening time)
                         now = datetime.now(HALIFAX_TZ)
-                        open_datetime = now.replace(hour=open_time.hour, minute=open_time.minute, second=0, microsecond=0)
+                        open_datetime = now.replace(
+                            hour=open_time.hour,
+                            minute=open_time.minute,
+                            second=0,
+                            microsecond=0
+                        )
                         
                         # If opening time is earlier than current time, it's tomorrow
                         if open_time < current_time:
@@ -208,7 +221,8 @@ def get_shop_by_id(shop_id):
         
         # Get shop basic info
         cur.execute("""
-            SELECT shop_id, name, category, description, terminal, gate, location_description
+            SELECT shop_id, name, category, description, terminal, gate, 
+                   location_description
             FROM shops
             WHERE shop_id = %s
         """, (shop_id,))
@@ -257,13 +271,23 @@ def get_shop_by_id(shop_id):
                         is_open = True
                         status = "Open"
                         now = datetime.now(HALIFAX_TZ)
-                        close_datetime = now.replace(hour=close_time.hour, minute=close_time.minute, second=0, microsecond=0)
+                        close_datetime = now.replace(
+                            hour=close_time.hour,
+                            minute=close_time.minute,
+                            second=0,
+                            microsecond=0
+                        )
                         next_change = close_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
                     else:
                         is_open = False
                         status = "Closed"
                         now = datetime.now(HALIFAX_TZ)
-                        open_datetime = now.replace(hour=open_time.hour, minute=open_time.minute, second=0, microsecond=0)
+                        open_datetime = now.replace(
+                            hour=open_time.hour,
+                            minute=open_time.minute,
+                            second=0,
+                            microsecond=0
+                        )
                         if open_time < current_time:
                             open_datetime += timedelta(days=1)
                         next_change = open_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -321,11 +345,15 @@ def get_shop_hours(shop_id):
         hours_rows = cur.fetchall()
         
         # Day names mapping
-        day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        day_names = [
+            "Monday", "Tuesday", "Wednesday", "Thursday",
+            "Friday", "Saturday", "Sunday"
+        ]
         
         weekly_hours = []
         for day_num, open_t, close_t, is_closed in hours_rows:
-            day_name = day_names[day_num] if 0 <= day_num < 7 else f"Day {day_num}"
+            day_name = (day_names[day_num] if 0 <= day_num < DAYS_IN_WEEK
+                       else f"Day {day_num}")
             
             if is_closed:
                 weekly_hours.append({
@@ -462,7 +490,8 @@ def get_shop_catalog(shop_id, include_items=True):
         return None
 
 
-def get_shop_items(shop_id, search=None, category_id=None, min_price=None, max_price=None, availability=None, sort=None):
+def get_shop_items(shop_id, search=None, category_id=None,
+                   min_price=None, max_price=None, availability=None, sort=None):
     """Get shop items with filtering and sorting"""
     try:
         conn = get_db_connection()
@@ -664,7 +693,8 @@ def get_shop_item_categories(shop_id):
             FROM item_categories ic
             LEFT JOIN items i ON ic.category_id = i.category_id AND i.shop_id = %s
             WHERE EXISTS (
-                SELECT 1 FROM items WHERE shop_id = %s AND category_id = ic.category_id
+                SELECT 1 FROM items 
+                WHERE shop_id = %s AND category_id = ic.category_id
             )
             GROUP BY ic.category_id, ic.category_name
             ORDER BY ic.category_name
@@ -707,8 +737,13 @@ def list_shops():
     if open_now is not None:
         open_now = open_now.lower() == "true"
     
-    result = get_shops(category=category, open_now=open_now, sort=sort, 
-                      terminal=terminal, gate=gate)
+    result = get_shops(
+        category=category,
+        open_now=open_now,
+        sort=sort,
+        terminal=terminal,
+        gate=gate
+    )
     return jsonify(result), HTTP_OK
 
 
@@ -776,7 +811,9 @@ def list_shop_items(shop_id):
     # Validate price range
     if min_price is not None and max_price is not None:
         if min_price > max_price:
-            return jsonify({"error": "Invalid price range: min_price cannot be greater than max_price"}), HTTP_BAD_REQUEST
+            return jsonify({
+                "error": "Invalid price range: min_price cannot be greater than max_price"
+            }), HTTP_BAD_REQUEST
     
     # Convert category_id to int if provided
     if category_id is not None:
@@ -785,9 +822,15 @@ def list_shop_items(shop_id):
         except ValueError:
             category_id = None
     
-    result = get_shop_items(shop_id, search=search, category_id=category_id,
-                           min_price=min_price, max_price=max_price,
-                           availability=availability, sort=sort)
+    result = get_shop_items(
+        shop_id,
+        search=search,
+        category_id=category_id,
+        min_price=min_price,
+        max_price=max_price,
+        availability=availability,
+        sort=sort
+    )
     if result is None:
         return jsonify({"error": "Shop not found"}), HTTP_NOT_FOUND
     return jsonify(result), HTTP_OK

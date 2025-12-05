@@ -24,7 +24,30 @@ from flask_app.constants import (
     LOW_STOCK_THRESHOLD,
     OUT_OF_STOCK_THRESHOLD,
     BOOKING_EXPIRY_HOURS,
-    DEFAULT_QUANTITY
+    DEFAULT_QUANTITY,
+    # Booking query column indices
+    BOOKING_COL_ID,
+    BOOKING_COL_USER_ID,
+    BOOKING_COL_ITEM_ID,
+    BOOKING_COL_SHOP_ID,
+    BOOKING_COL_QUANTITY,
+    BOOKING_COL_TOTAL_PRICE,
+    BOOKING_COL_STATUS,
+    BOOKING_COL_PICKUP_CODE,
+    BOOKING_COL_CREATED_AT,
+    BOOKING_COL_EXPIRES_AT,
+    BOOKING_COL_CANCELLED_AT,
+    BOOKING_COL_PICKED_UP_AT,
+    BOOKING_COL_SELECTED_VARIANTS,
+    BOOKING_COL_ITEM_NAME,
+    BOOKING_COL_ITEM_DESCRIPTION,
+    BOOKING_COL_ITEM_BASE_PRICE,
+    BOOKING_COL_ITEM_AVAILABILITY,
+    BOOKING_COL_ITEM_STOCK_QUANTITY,
+    BOOKING_COL_SHOP_NAME,
+    BOOKING_COL_SHOP_LOCATION,
+    BOOKING_COL_SHOP_TERMINAL,
+    BOOKING_COL_SHOP_GATE
 )
 
 
@@ -85,7 +108,10 @@ def get_ticket_id_from_token():
         # Look up ticket_id from ticket_number
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT ticket_id FROM tickets WHERE ticket_number = %s", (ticket_no,))
+        cur.execute(
+            "SELECT ticket_id FROM tickets WHERE ticket_number = %s",
+            (ticket_no,)
+        )
         result = cur.fetchone()
         cur.close()
         conn.close()
@@ -154,42 +180,47 @@ def get_user_bookings(user_id, status=None):
         for row in rows:
             # Parse selected_variants if exists
             selected_variants = None
-            if row[12]:  # selected_variants column
+            if row[BOOKING_COL_SELECTED_VARIANTS]:
                 import json
                 try:
-                    selected_variants = json.loads(row[12])
-                except:
+                    selected_variants = json.loads(row[BOOKING_COL_SELECTED_VARIANTS])
+                except (json.JSONDecodeError, TypeError):
                     selected_variants = None
             
             booking = {
-                'id': row[0],
-                'user_id': row[1],
-                'item_id': row[2],
-                'shop_id': row[3],
-                'quantity': row[4],
-                'total_price': float(row[5]),
-                'status': row[6],
-                'pickup_code': row[7],
-                'created_at': row[8].strftime('%Y-%m-%dT%H:%M:%SZ') if row[8] else None,
-                'expires_at': row[9].strftime('%Y-%m-%dT%H:%M:%SZ') if row[9] else None,
-                'cancelled_at': row[10].strftime('%Y-%m-%dT%H:%M:%SZ') if row[10] else None,
-                'picked_up_at': row[11].strftime('%Y-%m-%dT%H:%M:%SZ') if row[11] else None,
+                'id': row[BOOKING_COL_ID],
+                'user_id': row[BOOKING_COL_USER_ID],
+                'item_id': row[BOOKING_COL_ITEM_ID],
+                'shop_id': row[BOOKING_COL_SHOP_ID],
+                'quantity': row[BOOKING_COL_QUANTITY],
+                'total_price': float(row[BOOKING_COL_TOTAL_PRICE]),
+                'status': row[BOOKING_COL_STATUS],
+                'pickup_code': row[BOOKING_COL_PICKUP_CODE],
+                'created_at': (row[BOOKING_COL_CREATED_AT].strftime('%Y-%m-%dT%H:%M:%SZ')
+                              if row[BOOKING_COL_CREATED_AT] else None),
+                'expires_at': (row[BOOKING_COL_EXPIRES_AT].strftime('%Y-%m-%dT%H:%M:%SZ')
+                              if row[BOOKING_COL_EXPIRES_AT] else None),
+                'cancelled_at': (row[BOOKING_COL_CANCELLED_AT].strftime('%Y-%m-%dT%H:%M:%SZ')
+                                if row[BOOKING_COL_CANCELLED_AT] else None),
+                'picked_up_at': (row[BOOKING_COL_PICKED_UP_AT].strftime('%Y-%m-%dT%H:%M:%SZ')
+                                if row[BOOKING_COL_PICKED_UP_AT] else None),
                 'selected_variants': selected_variants,
                 'item': {
-                    'id': row[2],
-                    'name': row[13],
-                    'description': row[14],
-                    'base_price': float(row[15]) if row[15] else None,
-                    'availability': row[16],
-                    'stock_quantity': row[17]
-                } if row[13] else None,
+                    'id': row[BOOKING_COL_ITEM_ID],
+                    'name': row[BOOKING_COL_ITEM_NAME],
+                    'description': row[BOOKING_COL_ITEM_DESCRIPTION],
+                    'base_price': (float(row[BOOKING_COL_ITEM_BASE_PRICE])
+                                  if row[BOOKING_COL_ITEM_BASE_PRICE] else None),
+                    'availability': row[BOOKING_COL_ITEM_AVAILABILITY],
+                    'stock_quantity': row[BOOKING_COL_ITEM_STOCK_QUANTITY]
+                } if row[BOOKING_COL_ITEM_NAME] else None,
                 'shop': {
-                    'id': row[3],
-                    'name': row[18],
-                    'location': row[19],
-                    'terminal': row[20],
-                    'gate': row[21]
-                } if row[18] else None
+                    'id': row[BOOKING_COL_SHOP_ID],
+                    'name': row[BOOKING_COL_SHOP_NAME],
+                    'location': row[BOOKING_COL_SHOP_LOCATION],
+                    'terminal': row[BOOKING_COL_SHOP_TERMINAL],
+                    'gate': row[BOOKING_COL_SHOP_GATE]
+                } if row[BOOKING_COL_SHOP_NAME] else None
             }
             bookings.append(booking)
         
@@ -215,12 +246,15 @@ def create_booking(user_id, item_id, shop_id, quantity, selected_variants=None):
             return {
                 'success': False,
                 'error': 'Invalid quantity',
-                'message': f'Quantity must be between {MIN_BOOKING_QUANTITY} and {MAX_BOOKING_QUANTITY}'
+                'message': (f'Quantity must be between {MIN_BOOKING_QUANTITY} '
+                           f'and {MAX_BOOKING_QUANTITY}')
             }
         
         # Get item with lock
         cur.execute(
-            "SELECT item_id, name, description, base_price, stock_quantity, availability, shop_id FROM items WHERE item_id = %s FOR UPDATE",
+            """SELECT item_id, name, description, base_price, stock_quantity, 
+                      availability, shop_id 
+               FROM items WHERE item_id = %s FOR UPDATE""",
             (item_id,)
         )
         item = cur.fetchone()
@@ -236,10 +270,18 @@ def create_booking(user_id, item_id, shop_id, quantity, selected_variants=None):
         if item_shop_id != shop_id:
             cur.close()
             conn.close()
-            return {'success': False, 'error': 'Invalid shop', 'message': 'Item does not belong to this shop'}
+            return {
+                'success': False,
+                'error': 'Invalid shop',
+                'message': 'Item does not belong to this shop'
+            }
         
         # Get shop
-        cur.execute("SELECT shop_id, name, location_description, terminal, gate FROM shops WHERE shop_id = %s", (shop_id,))
+        cur.execute(
+            """SELECT shop_id, name, location_description, terminal, gate 
+               FROM shops WHERE shop_id = %s""",
+            (shop_id,)
+        )
         shop = cur.fetchone()
         
         if not shop:
@@ -273,7 +315,8 @@ def create_booking(user_id, item_id, shop_id, quantity, selected_variants=None):
         
         # Check if user already has active booking for this item
         cur.execute(
-            "SELECT id FROM bookings WHERE user_id = %s AND item_id = %s AND status = 'active'",
+            """SELECT id FROM bookings 
+               WHERE user_id = %s AND item_id = %s AND status = 'active'""",
             (user_id, item_id)
         )
         existing = cur.fetchone()
@@ -389,7 +432,11 @@ def cancel_booking(booking_id, user_id):
         if not booking:
             cur.close()
             conn.close()
-            return {'success': False, 'error': 'Not found', 'message': 'Booking not found'}
+            return {
+                'success': False,
+                'error': 'Not found',
+                'message': 'Booking not found'
+            }
         
         booking_id_db, booking_user_id, item_id, quantity, status = booking
         
@@ -397,13 +444,21 @@ def cancel_booking(booking_id, user_id):
         if booking_user_id != user_id:
             cur.close()
             conn.close()
-            return {'success': False, 'error': 'Forbidden', 'message': 'Not your booking'}
+            return {
+                'success': False,
+                'error': 'Forbidden',
+                'message': 'Not your booking'
+            }
         
         # Check if booking is active
         if status != 'active':
             cur.close()
             conn.close()
-            return {'success': False, 'error': 'Invalid status', 'message': f'Cannot cancel booking with status: {status}'}
+            return {
+                'success': False,
+                'error': 'Invalid status',
+                'message': f'Cannot cancel booking with status: {status}'
+            }
         
         # Update booking status
         cancelled_at = datetime.utcnow()
@@ -487,7 +542,10 @@ def expire_old_bookings():
             """, (quantity, item_id))
             
             # Update availability
-            cur.execute("SELECT stock_quantity FROM items WHERE item_id = %s", (item_id,))
+            cur.execute(
+                "SELECT stock_quantity FROM items WHERE item_id = %s",
+                (item_id,)
+            )
             result = cur.fetchone()
             new_stock = result[0] if result else 0
             new_availability = get_availability_status(new_stock)
@@ -563,7 +621,10 @@ def create_booking_route():
     selected_variants = data.get('selected_variants')
     
     if not item_id or not shop_id:
-        return jsonify({"error": "Missing required fields", "message": "item_id and shop_id are required"}), HTTP_BAD_REQUEST
+        return jsonify({
+            "error": "Missing required fields",
+            "message": "item_id and shop_id are required"
+        }), HTTP_BAD_REQUEST
     
     result = create_booking(
         user_id=ticket_id,
