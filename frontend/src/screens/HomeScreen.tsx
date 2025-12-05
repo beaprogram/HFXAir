@@ -5,6 +5,7 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import ArrivalsScreen from './tabs/ArrivalsScreen';
 import DeparturesScreen from './tabs/DeparturesScreen';
 import ShopsScreen from './tabs/ShopsScreen';
+import MapScreen from './tabs/MapScreen';
 import ParkingScreen from './tabs/ParkingScreen';
 import AboutScreen from './tabs/AboutScreen';
 
@@ -44,12 +45,7 @@ export default function HomeScreen({ userData: _userData, onLogout }: HomeScreen
         return <ShopsScreen showHeader={false} />;
       
       case 'map':
-        return (
-          <View style={styles.emptyContent}>
-            <FontAwesome name="map" size={48} color="#ccc" />
-            <Text style={styles.emptyText}>Airport Map - Coming Soon</Text>
-          </View>
-        );
+        return <MapScreen showHeader={false} />;
       
       case 'parking':
         return <ParkingScreen showHeader={false} />;
