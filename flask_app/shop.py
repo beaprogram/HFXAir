@@ -18,6 +18,17 @@ from flask_app.constants import (
 # Halifax timezone
 HALIFAX_TZ = pytz.timezone('America/Halifax')
 
+def format_time_for_display(time_obj):
+    """Format time object to HH:MM string for API response"""
+    if time_obj is None:
+        return None
+    if isinstance(time_obj, time):
+        return time_obj.strftime("%H:%M")
+    time_str = str(time_obj).rstrip(':')
+    parts = time_str.split(':')
+    if len(parts) >= 2:
+        return f"{int(parts[0]):02d}:{int(parts[1]):02d}"
+    return None
 
 def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None):
     """Get shops with filtering and sorting"""
@@ -95,6 +106,8 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
             is_open = False
             status = "Unknown"
             next_change = None
+            open_time_formatted = None   
+            close_time_formatted = None 
             
             if open_t and close_t and not is_closed:
                 try:
@@ -110,11 +123,13 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
                     else:
                         close_str = str(close_t).rstrip(':').split(':')
                         close_time = time(int(close_str[0]), int(close_str[1]))
+                    open_time_formatted = format_time_for_display(open_time)
+                    close_time_formatted = format_time_for_display(close_time)
                     
                     # Check if currently open
                     if open_time <= current_time < close_time:
                         is_open = True
-                        status = "Open"
+                        status = "Open now"
                         # Calculate next_change (closing time)
                         now = datetime.now(HALIFAX_TZ)
                         close_datetime = now.replace(
@@ -123,10 +138,10 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
                             second=0,
                             microsecond=0
                         )
-                        next_change = close_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
+                        next_change = close_time_formatted
                     else:
                         is_open = False
-                        status = "Closed"
+                        status = f"Opens at {open_time_formatted}"
                         # Calculate next_change (opening time)
                         now = datetime.now(HALIFAX_TZ)
                         open_datetime = now.replace(
@@ -140,7 +155,7 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
                         if open_time < current_time:
                             open_datetime += timedelta(days=1)
                         
-                        next_change = open_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
+                        next_change = open_time_formatted
                     
                 except Exception as e:
                     logging.error(f"Error parsing shop hours: {e}")
@@ -164,7 +179,9 @@ def get_shops(category=None, open_now=None, sort=None, terminal=None, gate=None)
                 "today_hours": {
                     "status": status,
                     "is_open": is_open,
-                    "next_change": next_change
+                    "next_change": next_change,
+                    "open_time": open_time_formatted,   
+                    "close_time": close_time_formatted
                 }
             }
             
@@ -249,6 +266,8 @@ def get_shop_by_id(shop_id):
         is_open = False
         status = "Unknown"
         next_change = None
+        open_time_formatted = None 
+        close_time_formatted = None 
         
         if hours_row:
             open_t, close_t, is_closed = hours_row
@@ -266,10 +285,12 @@ def get_shop_by_id(shop_id):
                     else:
                         close_str = str(close_t).rstrip(':').split(':')
                         close_time = time(int(close_str[0]), int(close_str[1]))
+                    open_time_formatted = format_time_for_display(open_time)
+                    close_time_formatted = format_time_for_display(close_time)
                     
                     if open_time <= current_time < close_time:
                         is_open = True
-                        status = "Open"
+                        status = "Open now"
                         now = datetime.now(HALIFAX_TZ)
                         close_datetime = now.replace(
                             hour=close_time.hour,
@@ -277,10 +298,10 @@ def get_shop_by_id(shop_id):
                             second=0,
                             microsecond=0
                         )
-                        next_change = close_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
+                        next_change = close_time_formatted
                     else:
                         is_open = False
-                        status = "Closed"
+                        status = f"Opens at {open_time_formatted}"
                         now = datetime.now(HALIFAX_TZ)
                         open_datetime = now.replace(
                             hour=open_time.hour,
@@ -290,7 +311,7 @@ def get_shop_by_id(shop_id):
                         )
                         if open_time < current_time:
                             open_datetime += timedelta(days=1)
-                        next_change = open_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
+                        next_change = open_time_formatted
                 except Exception as e:
                     logging.error(f"Error parsing hours: {e}")
             elif is_closed:
@@ -309,7 +330,14 @@ def get_shop_by_id(shop_id):
             "location": location,
             "status": status,
             "is_open": is_open,
-            "next_change": next_change
+            "next_change": next_change,
+            "today_hours": {
+                "open_time": open_time_formatted,
+                "close_time": close_time_formatted,
+                "is_open": is_open,
+                "status": status,
+                "next_change": next_change
+            }
         }
         
     except Exception as e:
