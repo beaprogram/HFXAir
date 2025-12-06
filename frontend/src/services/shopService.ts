@@ -84,7 +84,7 @@ const transformItem = (apiItem: ApiItem, shopId: string, category: string = 'Gen
   category: category,
   availability: transformAvailability(apiItem.availability),
   stockQuantity: apiItem.stock_quantity,
-  imageUrl: apiItem.image_url, 
+  imageUrl: apiItem.image_url,
   variantTypes: apiItem.variant_types || [],
   variants: (apiItem.variants || []).map(v => ({
     variantType: v.variant_type,
@@ -94,7 +94,6 @@ const transformItem = (apiItem: ApiItem, shopId: string, category: string = 'Gen
   })),
 });
 
-// Transform API booking response to frontend Booking type
 const transformBooking = (apiBooking: any): Booking => {
   const booking: any = {
     id: String(apiBooking.id),
@@ -103,9 +102,9 @@ const transformBooking = (apiBooking: any): Booking => {
     quantity: apiBooking.quantity || 1,
     selectedVariants: apiBooking.selected_variants,
     totalPrice: apiBooking.total_price || 0,
-    status: apiBooking.status === 'active' ? 'Active' : 
-            apiBooking.status === 'cancelled' ? 'Cancelled' : 
-            apiBooking.status === 'expired' ? 'Expired' : 
+    status: apiBooking.status === 'active' ? 'Active' :
+            apiBooking.status === 'cancelled' ? 'Cancelled' :
+            apiBooking.status === 'expired' ? 'Expired' :
             apiBooking.status === 'picked_up' ? 'Picked Up' : 'Active',
     createdAt: new Date(apiBooking.created_at),
     expiresAt: new Date(apiBooking.expires_at),
@@ -211,6 +210,34 @@ export const ShopService = {
       const response = await axiosProvider.get<ApiShop>(ENDPOINTS.SHOP_BY_ID(shopId));
       const shop = transformShop(response.data);
       return { data: shop, error: null, success: true };
+    } catch (error: any) {
+      return {
+        data: null,
+        error: error.response?.data?.message || error.message,
+        success: false,
+      };
+    }
+  },
+
+  async getShopHours(shopId: string): Promise<ServiceResponse<{ weeklyHours: Shop['weeklyHours'] }>> {
+    if (USE_MOCK_DATA) {
+      await simulateDelay(200);
+      const shop = mockShops.find(s => s.id === shopId);
+      if (!shop) {
+        return { data: null, error: 'Shop not found', success: false };
+      }
+      return { data: { weeklyHours: shop.weeklyHours }, error: null, success: true };
+    }
+
+    try {
+      const response = await axiosProvider.get(ENDPOINTS.SHOP_HOURS(shopId));
+      const weeklyHours = (response.data.weekly_hours || []).map((wh: any) => ({
+        day: wh.day,
+        openTime: wh.open_time,
+        closeTime: wh.close_time,
+        isClosed: wh.status === 'Closed',
+      }));
+      return { data: { weeklyHours }, error: null, success: true };
     } catch (error: any) {
       return {
         data: null,

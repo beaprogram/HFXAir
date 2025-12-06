@@ -1,7 +1,23 @@
+"""
+Test suite for Arrivals and Departures API endpoints.
+"""
+from flask_app.tests.test_constants import HTTP_OK
+
+
 def test_get_arrivals(client, monkeypatch):
     arrivals = [
-        {"flight_number": "AC101", "origin": "Toronto", "destination": "Halifax", "status": "On Time"},
-        {"flight_number": "WS202", "origin": "Ottawa", "destination": "Halifax", "status": "Delayed"}
+        {
+            "flight_number": "AC101",
+            "origin": "Toronto",
+            "destination": "Halifax",
+            "status": "On Time"
+        },
+        {
+            "flight_number": "WS202",
+            "origin": "Ottawa",
+            "destination": "Halifax",
+            "status": "Delayed"
+        }
     ]
 
     def fake_get_arrivals():
@@ -11,14 +27,24 @@ def test_get_arrivals(client, monkeypatch):
     monkeypatch.setattr(app, "get_arrivals", fake_get_arrivals)
 
     res = client.get("/flights/arrivals")
-    assert res.status_code == 200
+    assert res.status_code == HTTP_OK
     assert res.json == arrivals
 
 
 def test_get_departures(client, monkeypatch):
     departures = [
-        {"flight_number": "AC303", "origin": "Halifax", "destination": "Montreal", "status": "On Time"},
-        {"flight_number": "WS404", "origin": "Halifax", "destination": "Vancouver", "status": "Delayed"}
+        {
+            "flight_number": "AC303",
+            "origin": "Halifax",
+            "destination": "Montreal",
+            "status": "On Time"
+        },
+        {
+            "flight_number": "WS404",
+            "origin": "Halifax",
+            "destination": "Vancouver",
+            "status": "Delayed"
+        }
     ]
 
     def fake_get_departures():
@@ -28,5 +54,5 @@ def test_get_departures(client, monkeypatch):
     monkeypatch.setattr(app, "get_departures", fake_get_departures)
 
     res = client.get("/flights/departures")
-    assert res.status_code == 200
+    assert res.status_code == HTTP_OK
     assert res.json == departures

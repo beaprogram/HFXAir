@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # HFXAIR - Halifax Stanfield International Airport App
 
 A mobile application for travelers at Halifax Stanfield International Airport (YHZ) providing real-time flight information, airport shop directory, and item reservation system.
@@ -311,3 +312,5 @@ Go to **Documentation/Code_Quality_Files(After Refactoring)** for code quality r
 Click on [Other_Clean_Code_Practices](Documentation/Clean_Code_Documentation.md) for information about clean code practices followed in the main files of the backend part.
 
 
+=======
+>>>>>>> 458c8ee8 (-testing ci/cd)

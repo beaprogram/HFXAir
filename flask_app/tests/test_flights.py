@@ -1,3 +1,9 @@
+"""
+Test suite for Flights API endpoints.
+"""
+from flask_app.tests.test_constants import HTTP_OK
+
+
 def test_get_flights_returns_list(client, monkeypatch):
     sample_flights = [
         {"flight_number": "AC123", "status": "On Time", "destination": "Toronto"},
@@ -12,5 +18,5 @@ def test_get_flights_returns_list(client, monkeypatch):
     monkeypatch.setattr(app, "get_all_flights", fake_get_all_flights)
 
     response = client.get("/flights")
-    assert response.status_code == 200
+    assert response.status_code == HTTP_OK
     assert response.json == sample_flights

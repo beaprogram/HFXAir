@@ -1,12 +1,19 @@
 # helper_firebase_notification.py
 
 import logging
-from typing import List, Tuple, Dict
+from typing import List, Dict
 import firebase_admin
 from firebase_admin import messaging, credentials
 import os
 from pathlib import Path
 import requests
+
+from flask_app.constants import (
+    HTTP_OK,
+    FCM_BATCH_SIZE,
+    EXPO_BATCH_SIZE,
+    NOTIF_HTTP_TIMEOUT
+)
 
 logger = logging.getLogger(__name__)
 
@@ -71,17 +78,17 @@ def _fetch_tokens_for_subscription(ticket_no: str = None, flight_id: str = None)
 
         if ticket_no and flight_id:
             cur.execute(
-                "SELECT expo_token FROM user_subscriptions WHERE (ticket_no = %s OR flight_id = %s) AND expo_token IS NOT NULL",
+                "SELECT DISTINCT expo_token FROM user_subscriptions WHERE (ticket_no = %s OR flight_id = %s) AND expo_token IS NOT NULL",
                 (ticket_no, flight_id),
             )
         elif ticket_no:
             cur.execute(
-                "SELECT expo_token FROM user_subscriptions WHERE ticket_no = %s AND expo_token IS NOT NULL",
+                "SELECT DISTINCT expo_token FROM user_subscriptions WHERE ticket_no = %s AND expo_token IS NOT NULL",
                 (ticket_no,),
             )
         else:
             cur.execute(
-                "SELECT expo_token FROM user_subscriptions WHERE flight_id = %s AND expo_token IS NOT NULL",
+                "SELECT DISTINCT expo_token FROM user_subscriptions WHERE flight_id = %s AND expo_token IS NOT NULL",
                 (flight_id,),
             )
 
@@ -137,7 +144,7 @@ def notify_subscribers(ticket_no: str = None, flight_id: str = None, title: str 
 
     # 1) Send FCM tokens via Firebase Admin (multicast, up to 500 per batch)
     if fcm_tokens:
-        BATCH_SIZE = 500
+        BATCH_SIZE = FCM_BATCH_SIZE
         for i in range(0, len(fcm_tokens), BATCH_SIZE):
             batch = fcm_tokens[i:i+BATCH_SIZE]
             try:
@@ -186,7 +193,7 @@ def notify_subscribers(ticket_no: str = None, flight_id: str = None, title: str 
 
     # 2) Send Expo tokens via Expo Push API (chunked, up to 100 per request)
     if expo_tokens:
-        EXPO_BATCH = 100
+        EXPO_BATCH = EXPO_BATCH_SIZE
         expo_endpoint = "https://exp.host/--/api/v2/push/send"
         headers = {"Accept": "application/json", "Accept-encoding": "gzip, deflate", "Content-Type": "application/json"}
         for i in range(0, len(expo_tokens), EXPO_BATCH):
@@ -201,8 +208,8 @@ def notify_subscribers(ticket_no: str = None, flight_id: str = None, title: str 
                 })
 
             try:
-                resp = requests.post(expo_endpoint, json=messages, headers=headers, timeout=10)
-                if resp.status_code == 200:
+                resp = requests.post(expo_endpoint, json=messages, headers=headers, timeout=NOTIF_HTTP_TIMEOUT)
+                if resp.status_code == HTTP_OK:
                     # The Expo response contains tickets; assume success for delivered tickets
                     # We can't know exact delivered count without polling receipts; count all as sent here
                     sent_total += len(batch)
@@ -222,4 +229,3 @@ def notify_subscribers(ticket_no: str = None, flight_id: str = None, title: str 
         "failed_count": failed_total,
         "failed_tokens": failed_tokens,
     }
-

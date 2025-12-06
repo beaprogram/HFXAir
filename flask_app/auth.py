@@ -3,6 +3,8 @@ from functools import wraps
 from flask import request, jsonify
 import jwt
 
+from flask_app.constants import HTTP_UNAUTHORIZED
+
 
 def require_auth(secret_key):
     """
@@ -23,16 +25,16 @@ def require_auth(secret_key):
         def wrapper(*args, **kwargs):
             auth_header = request.headers.get("Authorization", "")
             if not auth_header.startswith("Bearer "):
-                return jsonify({"error": "Missing token"}), 401
+                return jsonify({"error": "Missing token"}), HTTP_UNAUTHORIZED
 
             token = auth_header.split(" ")[1]
             try:
                 decoded = jwt.decode(token, secret_key, algorithms=["HS256"])
                 request.user = decoded
             except jwt.ExpiredSignatureError:
-                return jsonify({"error": "Token expired"}), 401
+                return jsonify({"error": "Token expired"}), HTTP_UNAUTHORIZED
             except jwt.InvalidTokenError:
-                return jsonify({"error": "Invalid token"}), 401
+                return jsonify({"error": "Invalid token"}), HTTP_UNAUTHORIZED
 
             return f(*args, **kwargs)
         return wrapper

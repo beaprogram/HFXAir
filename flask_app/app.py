@@ -11,6 +11,51 @@ from pathlib import Path
 from flask_app.auth import require_auth
 from flask_app.helper.helper_firebase_notification import send_push, notify_subscribers
 from flask_app.helper.helper_cron_jobs import start_background_jobs
+from flask_app.constants import (
+    HTTP_OK,
+    HTTP_BAD_REQUEST,
+    HTTP_UNAUTHORIZED,
+    HTTP_NOT_FOUND,
+    HTTP_INTERNAL_ERROR,
+    TOKEN_EXPIRY_HOURS,
+    DB_CONNECT_TIMEOUT_SECONDS,
+    # Flight query column indices
+    FLIGHT_COL_ID,
+    FLIGHT_COL_NUMBER,
+    FLIGHT_COL_AIRLINE,
+    FLIGHT_COL_ORIGIN,
+    FLIGHT_COL_DESTINATION,
+    FLIGHT_COL_DEPARTURE,
+    FLIGHT_COL_ACTUAL_DEPARTURE,
+    FLIGHT_COL_STATUS,
+    FLIGHT_COL_GATE,
+    FLIGHT_COL_TERMINAL,
+    FLIGHT_DETAIL_NUMBER,
+    FLIGHT_DETAIL_STATUS,
+    FLIGHT_DETAIL_ORIGIN,
+    FLIGHT_DETAIL_DEST,
+    ARRIVAL_COL_ID,
+    ARRIVAL_COL_NUMBER,
+    ARRIVAL_COL_AIRLINE,
+    ARRIVAL_COL_ORIGIN,
+    ARRIVAL_COL_DESTINATION,
+    ARRIVAL_COL_SCHEDULED,
+    ARRIVAL_COL_ACTUAL,
+    ARRIVAL_COL_STATUS,
+    ARRIVAL_COL_GATE,
+    ARRIVAL_COL_TERMINAL,
+    ARRIVAL_COL_BAGGAGE,
+    DEPART_COL_ID,
+    DEPART_COL_NUMBER,
+    DEPART_COL_AIRLINE,
+    DEPART_COL_DESTINATION,
+    DEPART_COL_SCHEDULED,
+    DEPART_COL_ACTUAL,
+    DEPART_COL_STATUS,
+    DEPART_COL_GATE,
+    DEPART_COL_TERMINAL,
+    DEPART_COL_BOARDING
+)
 
 
 # Load environment variables from .env file
@@ -26,7 +71,6 @@ logging.basicConfig(
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
-TOKEN_EXPIRY_HOURS = 24
 SECRET = "hfxair-app-secret"
 
 # Initialize background cron jobs
@@ -41,7 +85,7 @@ def get_db_connection():
         user=os.getenv("DB_USER", "root"),
         password=os.getenv("DB_PASSWORD", ""),
         port=int(os.getenv("DB_PORT", "3306")),
-        connect_timeout=5
+        connect_timeout=DB_CONNECT_TIMEOUT_SECONDS
     )
 
 
@@ -57,14 +101,21 @@ def send_notification():
 
     if token:
         success = send_push(token, title, body)
-        return jsonify({"success": success}), (200 if success else 500)
+        return jsonify({"success": success}), (HTTP_OK if success else HTTP_INTERNAL_ERROR)
 
     # If ticket_no or flight_id provided, send to all subscribers
     if ticket_no or flight_id:
-        summary = notify_subscribers(ticket_no=ticket_no, flight_id=flight_id, title=title, body=body)
-        return jsonify({"summary": summary}), 200
+        summary = notify_subscribers(
+            ticket_no=ticket_no,
+            flight_id=flight_id,
+            title=title,
+            body=body
+        )
+        return jsonify({"summary": summary}), HTTP_OK
 
-    return jsonify({"error": "Provide 'token' or 'ticket_no'/'flight_id' in request body"}), 400
+    return jsonify({
+        "error": "Provide 'token' or 'ticket_no'/'flight_id' in request body"
+    }), HTTP_BAD_REQUEST
 
 
 @app.route('/')
@@ -75,15 +126,16 @@ def home():
 def check_empty(data):
     """Validate that required fields are present and not empty/None"""
     if not data:
-        return jsonify({"error": "Missing required fields"}), 400
+        return jsonify({"error": "Missing required fields"}), HTTP_BAD_REQUEST
     
     flight_number = data.get("flight_number")
     ticket_number = data.get("ticket_number")
     
     if not flight_number or not ticket_number:
-        return jsonify({"error": "Missing required fields"}), 400
+        return jsonify({"error": "Missing required fields"}), HTTP_BAD_REQUEST
     
     return None
+
 
 def check_db_for_ticket(flight_no, ticket_no):
     conn = get_db_connection()
@@ -100,6 +152,7 @@ def check_db_for_ticket(flight_no, ticket_no):
     conn.close()
     return bool(found)
 
+
 def create_token(flight_no, ticket_no):
     payload = {
         "flight_no": flight_no,
@@ -107,6 +160,7 @@ def create_token(flight_no, ticket_no):
         "exp": datetime.utcnow() + timedelta(hours=TOKEN_EXPIRY_HOURS)
     }
     return jwt.encode(payload, SECRET, algorithm="HS256")
+
 
 # login route
 @app.post("/login")
@@ -123,20 +177,21 @@ def login():
     
     if check_db_for_ticket(flight_number, ticket_number):
         token = create_token(flight_number, ticket_number)
-        return jsonify({"token": token}), 200
-    return jsonify({"error": "Invalid flight or ticket"}), 401
+        return jsonify({"token": token}), HTTP_OK
+    return jsonify({"error": "Invalid flight or ticket"}), HTTP_UNAUTHORIZED
 
 
 @app.get("/protected-test")
 @require_auth(SECRET)
 def protected_test():
-    return jsonify({"message": "Access granted"}), 200
+    return jsonify({"message": "Access granted"}), HTTP_OK
 
 
 @app.get("/flights")
 def get_flights():
     flights = get_all_flights()
-    return jsonify(flights), 200
+    return jsonify(flights), HTTP_OK
+
 
 def get_all_flights():
     logging.info("connecting db")
@@ -181,27 +236,31 @@ def get_all_flights():
     for row in rows:
         # Format scheduled time as HH:MM
         scheduled_time = None
-        if row[5]:  # departure_time
-            scheduled_time = row[5].strftime("%H:%M") if isinstance(row[5], datetime) else str(row[5])[:5]
+        if row[FLIGHT_COL_DEPARTURE]:
+            scheduled_time = (row[FLIGHT_COL_DEPARTURE].strftime("%H:%M")
+                            if isinstance(row[FLIGHT_COL_DEPARTURE], datetime)
+                            else str(row[FLIGHT_COL_DEPARTURE])[:5])
         
         # Format actual time as HH:MM
         actual_time = None
-        if row[6]:  # actual_departure_time
-            actual_time = row[6].strftime("%H:%M") if isinstance(row[6], datetime) else str(row[6])[:5]
+        if row[FLIGHT_COL_ACTUAL_DEPARTURE]:
+            actual_time = (row[FLIGHT_COL_ACTUAL_DEPARTURE].strftime("%H:%M")
+                          if isinstance(row[FLIGHT_COL_ACTUAL_DEPARTURE], datetime)
+                          else str(row[FLIGHT_COL_ACTUAL_DEPARTURE])[:5])
         
         flights.append({
-            "id": str(row[0]),  # flight_id
-            "flightNumber": row[1],  # flight_number
-            "airline": row[2],  # airline_name
-            "from": row[3],  # origin
-            "to": row[4],  # destination
+            "id": str(row[FLIGHT_COL_ID]),
+            "flightNumber": row[FLIGHT_COL_NUMBER],
+            "airline": row[FLIGHT_COL_AIRLINE],
+            "from": row[FLIGHT_COL_ORIGIN],
+            "to": row[FLIGHT_COL_DESTINATION],
             "scheduledTime": scheduled_time,
             "actualTime": actual_time,
-            "status": row[7] if row[7] else "Scheduled",  # status
-            "gate": row[8] if row[8] else None,  # gate
-            "terminal": row[9] if row[9] else None,  # terminal
-            "baggage": None,  # Not in schema
-            "notificationsEnabled": False  # Default to false
+            "status": row[FLIGHT_COL_STATUS] if row[FLIGHT_COL_STATUS] else "Scheduled",
+            "gate": row[FLIGHT_COL_GATE] if row[FLIGHT_COL_GATE] else None,
+            "terminal": row[FLIGHT_COL_TERMINAL] if row[FLIGHT_COL_TERMINAL] else None,
+            "baggage": None,
+            "notificationsEnabled": False
         })
     
     return flights
@@ -211,8 +270,8 @@ def get_all_flights():
 def get_flight_details(flight_id):
     flight = get_flight_by_id(flight_id)
     if flight:
-        return jsonify(flight), 200
-    return jsonify({"error": "Flight not found"}), 404
+        return jsonify(flight), HTTP_OK
+    return jsonify({"error": "Flight not found"}), HTTP_NOT_FOUND
 
 
 def get_flight_by_id(flight_id):    
@@ -230,22 +289,24 @@ def get_flight_by_id(flight_id):
     
     if row:
         return {
-            "flight_number": row[0],
-            "status": row[1],
-            "origin": row[2],
-            "destination": row[3]
+            "flight_number": row[FLIGHT_DETAIL_NUMBER],
+            "status": row[FLIGHT_DETAIL_STATUS],
+            "origin": row[FLIGHT_DETAIL_ORIGIN],
+            "destination": row[FLIGHT_DETAIL_DEST]
         }
     return None
+
 
 @app.get("/flights/arrivals")
 def arrivals():
     flights = get_arrivals()
-    return jsonify(flights), 200
+    return jsonify(flights), HTTP_OK
+
 
 @app.get("/flights/departures")
 def departures():
     flights = get_departures()
-    return jsonify(flights), 200
+    return jsonify(flights), HTTP_OK
 
 
 def get_arrivals():
@@ -283,30 +344,37 @@ def get_arrivals():
     conn.close()
     
     # Convert rows to list of dictionaries
-    arrivals = []
+    arrivals_list = []
     for row in rows:
         
         # Format actual time as HH:MM
         actual_time = None
-        if row[6]:  # actual_arrival_time
-            actual_time = row[6].strftime("%H:%M") if isinstance(row[6], datetime) else str(row[6])[:5]
+        if row[ARRIVAL_COL_ACTUAL]:
+            actual_time = (row[ARRIVAL_COL_ACTUAL].strftime("%H:%M")
+                          if isinstance(row[ARRIVAL_COL_ACTUAL], datetime)
+                          else str(row[ARRIVAL_COL_ACTUAL])[:5])
         
-        arrivals.append({
-            "id": str(row[0]),  # flight_id
-            "flightNumber": row[1],  # flight_number
-            "airline": row[2],  # airline_name
-            "from": row[3],  # origin
-            "to": row[4],  # destination
-            "scheduledTime": row[5],
-            "actualTime": row[6] if row[6] else row[5],
-            "status": row[7] if row[7] else "Scheduled",  # status
-            "gate": row[8] if row[8] else None,  # gate
-            "terminal": row[9] if row[9] else None,  # terminal
-            "baggage": row[10] if row[10] else None,  # baggage
-            "notificationsEnabled": False  # Default to false
+        arrivals_list.append({
+            "id": str(row[ARRIVAL_COL_ID]),
+            "flightNumber": row[ARRIVAL_COL_NUMBER],
+            "airline": row[ARRIVAL_COL_AIRLINE],
+            "from": row[ARRIVAL_COL_ORIGIN],
+            "to": row[ARRIVAL_COL_DESTINATION],
+            "scheduledTime": row[ARRIVAL_COL_SCHEDULED],
+            "actualTime": (row[ARRIVAL_COL_ACTUAL] if row[ARRIVAL_COL_ACTUAL]
+                          else row[ARRIVAL_COL_SCHEDULED]),
+            "status": (row[ARRIVAL_COL_STATUS] if row[ARRIVAL_COL_STATUS]
+                      else "Scheduled"),
+            "gate": row[ARRIVAL_COL_GATE] if row[ARRIVAL_COL_GATE] else None,
+            "terminal": (row[ARRIVAL_COL_TERMINAL] if row[ARRIVAL_COL_TERMINAL]
+                        else None),
+            "baggage": (row[ARRIVAL_COL_BAGGAGE] if row[ARRIVAL_COL_BAGGAGE]
+                       else None),
+            "notificationsEnabled": False
         })
     
-    return arrivals
+    return arrivals_list
+
 
 def get_departures():
     conn = get_db_connection()
@@ -342,30 +410,33 @@ def get_departures():
     conn.close()
     
     # Convert rows to list of dictionaries
-    departures = []
+    departures_list = []
     for row in rows:
 
         # Format boarding time as HH:MM
         boarding_time = None
-        if row[9]:  # boarding_time
-            boarding_time = row[9].strftime("%H:%M") if isinstance(row[9], datetime) else str(row[9])[:5]
+        if row[DEPART_COL_BOARDING]:
+            boarding_time = (row[DEPART_COL_BOARDING].strftime("%H:%M")
+                            if isinstance(row[DEPART_COL_BOARDING], datetime)
+                            else str(row[DEPART_COL_BOARDING])[:5])
         
-        departures.append({
-            "id": str(row[0]),  # flight_id
-            "flightNumber": row[1],  # flight_number
-            "airline": row[2],  # airline_name
-            "to": row[3],  # destination
-            "scheduledTime": row[4],
-            "actualTime": row[5] if row[5] else row[4],  # actual_departure_time (as is)
-            "status": row[6] if row[6] else "Scheduled",  # status
-            "gate": row[7] if row[7] else None,  # gate
-            "terminal": row[8] if row[8] else None,  # terminal
+        departures_list.append({
+            "id": str(row[DEPART_COL_ID]),
+            "flightNumber": row[DEPART_COL_NUMBER],
+            "airline": row[DEPART_COL_AIRLINE],
+            "to": row[DEPART_COL_DESTINATION],
+            "scheduledTime": row[DEPART_COL_SCHEDULED],
+            "actualTime": (row[DEPART_COL_ACTUAL] if row[DEPART_COL_ACTUAL]
+                          else row[DEPART_COL_SCHEDULED]),
+            "status": (row[DEPART_COL_STATUS] if row[DEPART_COL_STATUS]
+                      else "Scheduled"),
+            "gate": row[DEPART_COL_GATE] if row[DEPART_COL_GATE] else None,
+            "terminal": row[DEPART_COL_TERMINAL] if row[DEPART_COL_TERMINAL] else None,
             "boardingTime": boarding_time,
-            "notificationsEnabled": False  # Default to false
+            "notificationsEnabled": False
         })
     
-    return departures
-
+    return departures_list
 
 
 @app.post("/subscribe")
@@ -376,11 +447,11 @@ def subscribe():
     expo_token = data.get("expo_token")
 
     if not flight_id or not expo_token:
-        return jsonify({"error": "Missing fields"}), 400
+        return jsonify({"error": "Missing fields"}), HTTP_BAD_REQUEST
 
     ticket_no = request.user["ticket_no"]
     save_subscription(ticket_no, flight_id, expo_token)
-    return jsonify({"message": "Subscribed"}), 200
+    return jsonify({"message": "Subscribed"}), HTTP_OK
 
 
 def save_subscription(ticket_no, flight_id, expo_token):
