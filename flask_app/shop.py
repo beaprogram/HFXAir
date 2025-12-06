@@ -595,7 +595,7 @@ def get_shop_items(shop_id, search=None, category_id=None,
             # Get variants for this item
             cur.execute("""
                 SELECT variant_type, variant_value, price_adjustment
-                FROM product_variants
+                FROM item_variants
                 WHERE item_id = %s
                 ORDER BY variant_type, variant_value
             """, (item_id,))
@@ -664,7 +664,7 @@ def get_item_by_id(item_id):
         # Get variants if any
         cur.execute("""
             SELECT variant_type, variant_value, price_adjustment
-            FROM product_variants
+            FROM item_variants
             WHERE item_id = %s
             ORDER BY variant_type, variant_value
         """, (item_id,))

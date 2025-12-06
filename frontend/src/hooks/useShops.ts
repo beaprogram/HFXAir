@@ -46,11 +46,20 @@ export function useShop(shopId: string | null) {
     const fetchShop = async () => {
       setLoading(true);
       setError(null);
-      const response = await ShopService.getShopById(shopId);
-      if (!response.success) {
-        setError(response.error);
-      } else {
-        setShop(response.data);
+
+      // Fetch shop details and weekly hours in parallel
+      const [shopResponse, hoursResponse] = await Promise.all([
+        ShopService.getShopById(shopId),
+        ShopService.getShopHours(shopId),
+      ]);
+
+      if (!shopResponse.success) {
+        setError(shopResponse.error);
+      } else if (shopResponse.data) {
+        setShop({
+          ...shopResponse.data,
+          weeklyHours: hoursResponse.data?.weeklyHours || shopResponse.data.weeklyHours || [],
+        });
       }
       setLoading(false);
     };
