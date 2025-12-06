@@ -1,94 +1,313 @@
-# Group01
+# HFXAIR - Halifax Stanfield International Airport App
 
+A mobile application for travelers at Halifax Stanfield International Airport (YHZ) providing real-time flight information, airport shop directory, and item reservation system.
 
+---
+## Features Description
 
-## Getting started
+Click on [Features](Documentation/USER_STORIES.md) to view the explanation of features implemented in the application.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Technology Stack
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+| Layer | Technologies |
+|-------|--------------|
+| Frontend | React Native 0.82.1, TypeScript, React 19.1.1 |
+| Backend | Python Flask, Flask-SQLAlchemy |
+| Database | MariaDB (db-5308.cs.dal.ca) |
+| Authentication | JWT (PyJWT) |
+| Push Notifications | Firebase Cloud Messaging |
+| Background Jobs | APScheduler |
 
-## Add your files
+---
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## Dependencies
+
+### Frontend Dependencies
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| react | 19.1.1 | React library |
+| react-native | 0.82.1 | Mobile framework |
+| @react-navigation/native | ^7.1.19 | Navigation framework |
+| @react-navigation/stack | ^7.6.3 | Stack navigation |
+| @react-native-firebase/app | ^23.5.0 | Firebase core SDK |
+| @react-native-firebase/messaging | ^23.5.0 | Push notifications |
+| axios | ^1.12.2 | HTTP client |
+| react-native-gesture-handler | ^2.20.2 | Gesture handling |
+| react-native-safe-area-context | ^5.6.2 | Safe area handling |
+| react-native-screens | ^4.18.0 | Native screen components |
+| react-native-vector-icons | ^10.2.0 | Icon library |
+
+#### Dev Dependencies
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| typescript | ^5.8.3 | TypeScript compiler |
+| @babel/core | ^7.25.2 | Babel compiler |
+| jest | ^29.6.3 | Testing framework |
+| eslint | ^8.19.0 | Code linting |
+| prettier | 2.8.8 | Code formatting |
+
+### Backend Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| flask | Web framework for REST API |
+| flask_sqlalchemy | SQLAlchemy integration |
+| PyMySQL | MySQL/MariaDB database driver |
+| python-dotenv | Environment variable management |
+| pyjwt | JWT token encoding/decoding |
+| firebase-admin | Firebase Admin SDK for push notifications |
+| pytz | Timezone handling (America/Halifax) |
+| APScheduler | Background job scheduling |
+| pytest | Testing framework |
+| pytest-flask | Flask testing utilities |
+| pytest-cov | Test coverage reporting |
+
+---
+
+## Build and Deployment Instructions
+
+### Prerequisites
+
+- Node.js >= 20
+- Python 3.8+
+- Android Studio (for Android development, make an android simulator)
+- Firebase project with Cloud Messaging enabled
+
+### Frontend Setup
+
+1. **Navigate to frontend directory:**
+   ```bash
+   cd frontend
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Configure API base URL:**
+   
+   Edit `src/services/axiosProvider.ts` and update the `baseURL`:
+   ```typescript
+   const axiosInstance: AxiosInstance = axios.create({
+     baseURL: 'http://172.17.1.217',
+     timeout: 10000,
+     headers: {
+       'Content-Type': 'application/json',
+     },
+   });
+   ```
+
+4. **Add Firebase configuration:**
+   
+   Place `google-services.json` in `frontend/android/app/`
+
+5. **Start Metro bundler:**
+   ```bash
+   npm start
+   ```
+
+6. **Run on Android (in a new terminal):**
+   ```bash
+   npx react-native run-android
+   ```
+
+### Backend Setup
+
+1. **Navigate to backend directory:**
+   ```bash
+   cd flask_app
+   ```
+
+2. **Create virtual environment:**
+   ```bash
+   python -m venv venv
+   ```
+
+3. **Activate virtual environment:**
+   
+   On Linux/Mac:
+   ```bash
+   source venv/bin/activate
+   ```
+   
+   On Windows:
+   ```bash
+   venv\Scripts\activate
+   ```
+
+4. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. **Create `.env` file:**
+   
+   Create a `.env` file in `flask_app/` with the following configuration:
+   ```env
+   FLASK_ENV=production
+   
+   DATABASE_URL=jdbc:mariadb://db-5308.cs.dal.ca:3306/CSCI5308_1_DEVINT
+   DB_HOST=db-5308.cs.dal.ca
+   DB_NAME=CSCI5308_1_DEVINT
+   DB_USER=CSCI5308_1_DEVINT_USER
+   DB_PASSWORD=<your_password>
+   
+   AIRPORT_NAME=Halifax (YHZ)
+   ```
+
+6. **Add Firebase service account key:**
+   
+   Place your Firebase service account JSON file in the `flask_app/` directory.
+
+7. **Run the server:**
+   ```bash
+   flask run --host=0.0.0.0
+   ```
+   
+   Or for production:
+   ```bash
+   python app.py
+   ```
+
+### Verifying Database Connection
+
+Run the database connection test:
+```bash
+cd flask_app
+python test_db_connection.py
+```
+
+Expected output:
+```
+✓ Connected successfully!
+✓ MariaDB/MySQL version: X.X.X
+✓ Flights table exists with X rows
+✓ Database connection test passed!
+```
+
+---
+
+## DEPLOYMENT INSTRUCTIONS
+
+Click on [Deployment](Documentation/Deployment.md) to check the complete deployment instructions along with major issues and its solution.
+
+## Project Structure
 
 ```
-cd existing_repo
-
-git remote add origin https://git.cs.dal.ca/courses/2025-Fall/csci-5308/group01.git
-git branch -M main
-git push -uf origin main
+group01/
+├── frontend/                 # React Native mobile app
+│   ├── src/
+│   │   ├── components/       # Reusable UI components
+│   │   ├── screens/          # Screen components
+│   │   │   ├── auth/         # Login, Loading, GuestFlight
+│   │   │   ├── shops/        # Shop views and catalog
+│   │   │   └── tabs/         # Main tab screens
+│   │   ├── hooks/            # Custom React hooks
+│   │   ├── services/         # API communication (Axios)
+│   │   ├── navigation/       # Navigation configuration
+│   │   ├── types/            # TypeScript definitions
+│   │   └── utils/            # Helper functions
+│   ├── android/              # Android native code
+│   └── package.json          # Frontend dependencies
+│
+├── flask_app/                # Flask REST API backend
+│   ├── app.py                # Main application
+│   ├── auth.py               # JWT authentication
+│   ├── shop.py               # Shop endpoints
+│   ├── booking.py            # Booking endpoints
+│   ├── helper/               # Firebase & cron helpers
+│   ├── tests/                # Pytest test suite
+│   ├── requirements.txt      # Python dependencies
+│   └── .env                  # Environment configuration
+│
+└── README.md                 # This file
 ```
 
-## Integrate with your tools
+---
 
-- [ ] [Set up project integrations](https://git.cs.dal.ca/courses/2025-Fall/csci-5308/group01/-/settings/integrations)
+## API Endpoints
 
-## Collaborate with your team
+### Authentication
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/login` | Authenticate with flight_number and ticket_number |
 
-## Test and Deploy
+### Flights
 
-Use the built-in continuous integration in GitLab.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/flights` | Get all flights |
+| GET | `/flights/<flight_id>` | Get flight details |
+| GET | `/flights/arrivals` | Get arriving flights |
+| GET | `/flights/departures` | Get departing flights |
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+### Shops
 
-***
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/shops` | List all shops |
+| GET | `/shops/<shop_id>` | Get shop details |
+| GET | `/shops/<shop_id>/hours` | Get shop hours |
+| GET | `/shops/<shop_id>/items` | Get shop items |
+| GET | `/shops/categories` | Get shop categories |
 
-# Editing this README
+### Bookings
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/bookings` | Get user's bookings |
+| POST | `/bookings` | Create reservation |
+| POST | `/bookings/<id>/cancel` | Cancel reservation |
 
-## Suggestions for a good README
+### Notifications
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/send-notification` | Send push notification |
+| POST | `/subscribe` | Subscribe to flight updates |
 
-## Name
-Choose a self-explaining name for your project.
+---
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+## Usage Scenarios
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+Click on [Usage](Documentation/Usage_Scenarios.md) to find all the usage scenarios of all the features implemented in the applicaton.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+---
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+## CI/CD Pipeline
+We followed **Build** ----> **Test**(80% Code Coverage) -----> **Deploy** ----> **Code quality** with four stages for CI/CD pipeline development.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+Click on [CI/CD](Documentation/CICD_PIPELINE_SETUP.md) to know about the complete CI/CD Pipeline setup for the application along with proper explanation with commans and some issues and its solution.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+---
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+## TDD (Test-Driven Development)
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+Click on [TDD](Documentation/TDD_Documentation.md) to see the complete documentation on TDD.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+---
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+## Design Principles
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+Click on [Design](Documentation/Design_Principles.md) to know about the implementation of design principles in the development part of the application.
 
-## License
-For open source projects, say how it is licensed.
+## Code Quality Analysis
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Click on [Code-Quality](Documentation/REFACTORING_DOCUMENTATION.md) to find the refactoring documentation and also gives explanation of smells identified and refactored.
+
+
+## Code Quality Reports
+
+Go to **Documentation/Code_Quality_Files(Before Refactoring)** for code quality reports before refactoring.
+
+Go to **Documentation/Code_Quality_Files(After Refactoring)** for code quality reports after refactoring.
+
+## Other Clean Code Practices
+
+Click on [Other_Clean_Code_Practices](Documentation/Clean_Code_Documentation.md) for information about clean code practices followed in the main files of the backend part.
+
+

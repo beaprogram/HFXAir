@@ -1,0 +1,28 @@
+2025-12-04 22:20:23 - INFO - [logging.py:15] - License type: LicenseType.Trial
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Parsing ...
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Parsing package: flask_app
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Parsing package: flask_app.tests
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Parsing package: flask_app.helper
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Second pass of parsing for package: flask_app
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Second pass of parsing for package: flask_app.tests
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Second pass of parsing for package: flask_app.helper
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Calculating metrics ...
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Collect dependencies ...
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Detecting code smells ...
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Detecting design smells ...
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Detecting architecture smells ...
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Detecting machine learning smells ...
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Analysis complete.
+2025-12-04 22:20:23 - INFO - [logging.py:15] - Preparing analysis summary ...
+2025-12-04 22:20:24 - INFO - [logging.py:15] - CSV data successfully exported to /Users/jashwanthnaidu/DPy/results2/flask_app_function_metrics.csv
+2025-12-04 22:20:24 - INFO - [logging.py:15] - Successfully exported CSV data to flask_app_function_metrics.csv
+2025-12-04 22:20:24 - INFO - [logging.py:15] - CSV data successfully exported to /Users/jashwanthnaidu/DPy/results2/flask_app_class_module_metrics.csv
+2025-12-04 22:20:24 - INFO - [logging.py:15] - Successfully exported CSV data to flask_app_class_module_metrics.csv
+2025-12-04 22:20:24 - INFO - [logging.py:15] - CSV data successfully exported to /Users/jashwanthnaidu/DPy/results2/flask_app_implementation_smells.csv
+2025-12-04 22:20:24 - INFO - [logging.py:15] - Successfully exported CSV data to flask_app_implementation_smells.csv
+2025-12-04 22:20:24 - INFO - [logging.py:15] - CSV data successfully exported to /Users/jashwanthnaidu/DPy/results2/flask_app_design_smells.csv
+2025-12-04 22:20:24 - INFO - [logging.py:15] - Successfully exported CSV data to flask_app_design_smells.csv
+2025-12-04 22:20:24 - INFO - [logging.py:15] - CSV data successfully exported to /Users/jashwanthnaidu/DPy/results2/flask_app_arch_smells.csv
+2025-12-04 22:20:24 - INFO - [logging.py:15] - Successfully exported CSV data to flask_app_arch_smells.csv
+2025-12-04 22:20:24 - INFO - [logging.py:15] - No ML smells found.
+2025-12-04 22:20:24 - INFO - [logging.py:15] - Done.

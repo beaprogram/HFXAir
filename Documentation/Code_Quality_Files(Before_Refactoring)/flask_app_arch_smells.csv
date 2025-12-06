@@ -1,0 +1,3 @@
+Project,Package,Smell,Description
+flask_app,flask_app,Feature concentration,The component realizes more than one architectural concern/feature. Independent sets of related modules within this component are: [auth; app; shop; booking]; [app2]; [test_db_connection]; [__init__ ]. LCC (Lack of Component Cohesion) = 0.57
+flask_app,flask_app.tests,Feature concentration,The component realizes more than one architectural concern/feature. Independent sets of related modules within this component are: [test_bookings]; [test_flights]; [conftest]; [test_shopping_component]; [test_login]; [test_arrivals_departures]; [test_flight_details]; [test_subscribe]; [test_shops]; [test_integration]. LCC (Lack of Component Cohesion) = 1.0
