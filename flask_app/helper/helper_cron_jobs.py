@@ -34,6 +34,9 @@ load_dotenv(dotenv_path=env_path)
 # This resets when Flask restarts (which is acceptable for development)
 reminder_cache = {}
 
+# Singleton scheduler instance to prevent duplicates
+_scheduler_instance = None
+
 
 def get_db_connection():
     """Get database connection"""
@@ -251,24 +254,31 @@ def start_background_jobs(app):
     Initialize and start all background cron jobs
     Should be called from Flask app
     """
+    global _scheduler_instance
+    
+    # Prevent multiple scheduler instances
+    if _scheduler_instance is not None and _scheduler_instance.running:
+        logger.info("Scheduler already running, skipping initialization")
+        return _scheduler_instance
+    
     try:
         from apscheduler.schedulers.background import BackgroundScheduler
         
-        scheduler = BackgroundScheduler()
+        _scheduler_instance = BackgroundScheduler()
         
-        # Add jobs
-        # Check departure reminders every minute
-        scheduler.add_job(
-            func=check_departure_reminders,
-            trigger="interval",
-            minutes=SCHED_CHECK_INTERVAL,
-            id="departure_reminders",
-            name="Check departure reminders",
-            replace_existing=True
-        )
+        # DISABLED: Departure reminders (30/15/5 min)
+        # Uncomment below to re-enable
+        # _scheduler_instance.add_job(
+        #     func=check_departure_reminders,
+        #     trigger="interval",
+        #     minutes=SCHED_CHECK_INTERVAL,
+        #     id="departure_reminders",
+        #     name="Check departure reminders",
+        #     replace_existing=True
+        # )
         
         # Check flight updates every minute
-        scheduler.add_job(
+        _scheduler_instance.add_job(
             func=check_flight_updates,
             trigger="interval",
             minutes=SCHED_CHECK_INTERVAL,
@@ -278,12 +288,12 @@ def start_background_jobs(app):
         )
         
         # Start the scheduler
-        if not scheduler.running:
-            scheduler.start()
+        if not _scheduler_instance.running:
+            _scheduler_instance.start()
             logger.info("Background scheduler started successfully")
-            logger.info(f"Jobs: departure_reminders (every {SCHED_CHECK_INTERVAL} min), flight_updates (every {SCHED_CHECK_INTERVAL} min)")
+            logger.info(f"Jobs: flight_updates (every {SCHED_CHECK_INTERVAL} min)")
         
-        return scheduler
+        return _scheduler_instance
         
     except Exception as e:
         logger.error(f"Failed to start background scheduler: {e}")

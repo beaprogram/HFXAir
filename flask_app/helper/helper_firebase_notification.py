@@ -1,7 +1,7 @@
 # helper_firebase_notification.py
 
 import logging
-from typing import List, Tuple, Dict
+from typing import List, Dict
 import firebase_admin
 from firebase_admin import messaging, credentials
 import os
@@ -78,17 +78,17 @@ def _fetch_tokens_for_subscription(ticket_no: str = None, flight_id: str = None)
 
         if ticket_no and flight_id:
             cur.execute(
-                "SELECT expo_token FROM user_subscriptions WHERE (ticket_no = %s OR flight_id = %s) AND expo_token IS NOT NULL",
+                "SELECT DISTINCT expo_token FROM user_subscriptions WHERE (ticket_no = %s OR flight_id = %s) AND expo_token IS NOT NULL",
                 (ticket_no, flight_id),
             )
         elif ticket_no:
             cur.execute(
-                "SELECT expo_token FROM user_subscriptions WHERE ticket_no = %s AND expo_token IS NOT NULL",
+                "SELECT DISTINCT expo_token FROM user_subscriptions WHERE ticket_no = %s AND expo_token IS NOT NULL",
                 (ticket_no,),
             )
         else:
             cur.execute(
-                "SELECT expo_token FROM user_subscriptions WHERE flight_id = %s AND expo_token IS NOT NULL",
+                "SELECT DISTINCT expo_token FROM user_subscriptions WHERE flight_id = %s AND expo_token IS NOT NULL",
                 (flight_id,),
             )
 
