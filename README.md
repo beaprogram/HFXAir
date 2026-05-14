@@ -183,8 +183,8 @@ python test_db_connection.py
 Expected output:
 ```
 [OK] Connected successfully!
-[OK] MariaDB/MySQL version: X.X.X
-[OK] Flights table exists with X rows
+[OK] MariaDB/MySQL version: 10.6.12
+[OK] Flights table exists with 42 rows
 [OK] Database connection test passed!
 ```
 
