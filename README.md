@@ -309,7 +309,3 @@ Go to **Documentation/Code_Quality_Files(After Refactoring)** for code quality r
 ## Other Clean Code Practices
 
 Click on [Other_Clean_Code_Practices](Documentation/Clean_Code_Documentation.md) for information about clean code practices followed in the main files of the backend part.
-
-
-=======
->>>>>>> 458c8ee8 (-testing ci/cd)
