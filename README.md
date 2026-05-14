@@ -182,10 +182,10 @@ python test_db_connection.py
 
 Expected output:
 ```
-✓ Connected successfully!
-✓ MariaDB/MySQL version: X.X.X
-✓ Flights table exists with X rows
-✓ Database connection test passed!
+[OK] Connected successfully!
+[OK] MariaDB/MySQL version: X.X.X
+[OK] Flights table exists with X rows
+[OK] Database connection test passed!
 ```
 
 ---
