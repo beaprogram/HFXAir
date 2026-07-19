@@ -16,7 +16,7 @@ export default function AppNavigator() {
   const [isGuest, setIsGuest] = useState(false);
   const [userData, setUserData] = useState<{ticketNumber: string, flightNumber: string} | null>(null);
 
-  const handleLogin = (ticketNumber: string, flightNumber: string, response?: any) => {
+  const handleLogin = (ticketNumber: string, flightNumber: string, _response?: any) => {
     setIsLoading(true);
     
     const guestLogin = ticketNumber === '' && flightNumber === '';

@@ -12,7 +12,7 @@ export default function LoadingScreen() {
       easing: Easing.linear,
       useNativeDriver: false,
     }).start();
-  }, []);
+  }, [progress]);
 
   const width = progress.interpolate({
     inputRange: [0, 1],

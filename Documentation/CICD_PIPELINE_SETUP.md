@@ -1,5 +1,9 @@
 # CI/CD Pipeline Setup Documentation
 
+> **Historical course pipeline:** This guide documents the original self-hosted
+> GitLab runners and VM deployment. Do not reuse its hosts, users, tokens, or keys.
+> GitHub pull requests now use `.github/workflows/ci.yml` for test feedback only.
+
 ## HFXAIR Flask Backend - Step-by-Step Implementation Guide
 
 ---
@@ -88,16 +92,9 @@ cat ~/.ssh/gitlab_ci_key.pub >> ~/.ssh/authorized_keys
 cat ~/.ssh/gitlab_ci_key
 ```
 
-**Output** (example):
-```
------BEGIN OPENSSH PRIVATE KEY-----
-b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-QyNTUxOQAAACBcX1AI3KZc3LI3dJZ6LTpq0bl6LfsS6xSmcbjC5fh4gAAAAJghakbgIWpG
-...
------END OPENSSH PRIVATE KEY-----
-```
-
-**Important**: Copy this entire key (including BEGIN and END lines) for the next step.
+The output is sensitive key material. Do not paste it into documentation, issues,
+chat, terminal recordings, or repository files. Store it only in the approved CI
+secret/file-variable interface for a newly provisioned environment.
 
 ### 1.5 Base64 Encode the Private Key (Required for GitLab)
 

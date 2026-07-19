@@ -19,14 +19,16 @@ from flask_app.tests.test_constants import (
 )
 
 
-def test_login_success(client):
+def test_login_success(client, monkeypatch):
+    monkeypatch.setattr(app, "check_db_for_ticket", lambda *_: True)
     data = {"flight_number": TEST_FLIGHT_NUMBER, "ticket_number": TEST_TICKET_NUMBER}
     response = client.post("/login", json=data)
     assert response.status_code == HTTP_OK
     assert "token" in response.json
 
 
-def test_login_invalid(client):
+def test_login_invalid(client, monkeypatch):
+    monkeypatch.setattr(app, "check_db_for_ticket", lambda *_: False)
     data = {
         "flight_number": TEST_FLIGHT_NUMBER_INVALID,
         "ticket_number": TEST_TICKET_NUMBER_INVALID
@@ -55,7 +57,8 @@ def test_login_missing_fields(client, data, description):
     assert "error" in response.json
 
 
-def test_login_returns_valid_token(client):
+def test_login_returns_valid_token(client, monkeypatch):
+    monkeypatch.setattr(app, "check_db_for_ticket", lambda *_: True)
     data = {"flight_number": TEST_FLIGHT_NUMBER, "ticket_number": TEST_TICKET_NUMBER}
     response = client.post("/login", json=data)
     assert response.status_code == HTTP_OK

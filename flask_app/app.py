@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 import jwt
 import pymysql
 import os
+import secrets
 import logging
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -70,8 +71,8 @@ logging.basicConfig(
 )
 
 app = Flask(__name__)
-app.config['DEBUG'] = True
-SECRET = "hfxair-app-secret"
+app.config['DEBUG'] = os.getenv("FLASK_DEBUG", "false").lower() == "true"
+SECRET = os.getenv("JWT_SECRET") or secrets.token_urlsafe(32)
 
 # Initialize background cron jobs
 scheduler = start_background_jobs(app)

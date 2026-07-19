@@ -7,8 +7,6 @@ interface RefreshState {
   isManualRefreshing: boolean;
 }
 
-type RefreshStateUpdate = (prev: RefreshState) => RefreshState;
-
 export const useFlightRefresh = () => {
   const [state, setState] = useState<RefreshState>({
     lastRefreshed: new Date(),
@@ -59,7 +57,7 @@ export const useFlightRefresh = () => {
           }
         }, 1000);
       });
-    } catch (error) {
+    } catch {
       setState((prev: RefreshState) => ({
         ...prev,
         refreshing: false,

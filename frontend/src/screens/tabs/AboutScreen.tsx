@@ -53,7 +53,7 @@ const emergencyContacts = [
   { label: 'Customer Service', number: '1-877-359-4797' },
 ];
 
-export default function AboutScreen({ showHeader = true }: AboutScreenProps) {
+export default function AboutScreen(_props: AboutScreenProps) {
   const handleContact = (type: string, value: string) => {
     switch (type) {
       case 'phone':

@@ -41,12 +41,12 @@ const parkingOptions = [
   },
 ];
 
-export default function ParkingScreen({ showHeader = true }: ParkingScreenProps) {
+export default function ParkingScreen(_props: ParkingScreenProps) {
   const [days, setDays] = useState('');
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   const calculateCost = (rate: string, dailyMax: string) => {
-    const numDays = parseInt(days) || 0;
+    const numDays = parseInt(days, 10) || 0;
     if (numDays <= 0) return null;
     
     const pricePerDay = parseFloat(dailyMax.replace('$', ''));
@@ -122,7 +122,7 @@ export default function ParkingScreen({ showHeader = true }: ParkingScreenProps)
                   <View style={styles.costEstimate}>
                     <Icon name="calculator" size={16} color="#0C2340" />
                     <Text style={styles.costText}>
-                      Estimated cost for {days} day{parseInt(days) !== 1 ? 's' : ''}: ${cost}
+                      Estimated cost for {days} day{parseInt(days, 10) !== 1 ? 's' : ''}: ${cost}
                     </Text>
                   </View>
                 )}
