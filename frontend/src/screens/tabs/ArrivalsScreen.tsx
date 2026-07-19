@@ -63,9 +63,7 @@ const getStatusColor = (status: string) => {
   }
 };
 
-export default function ArrivalsScreen({
-  showHeader = true,
-}: ArrivalsScreenProps) {
+export default function ArrivalsScreen(_props: ArrivalsScreenProps) {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [data, setData] = useState([]);
 

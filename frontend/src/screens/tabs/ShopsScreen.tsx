@@ -12,7 +12,7 @@ interface ShopsScreenProps {
   showHeader?: boolean;
 }
 
-export default function ShopsScreen({ showHeader = true }: ShopsScreenProps) {
+export default function ShopsScreen(_props: ShopsScreenProps) {
   const [currentView, setCurrentView] = useState<ShopViewType>('list');
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);

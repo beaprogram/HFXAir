@@ -1,5 +1,9 @@
 # HFXAIR Flask Application - Deployment Guide
 
+> **Historical course environment:** Hostnames, addresses, usernames, and service
+> paths below document the original class deployment. They are not a supported public
+> environment. Create new infrastructure and credentials for any redeployment.
+
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
 2. [Environment Setup](#environment-setup)
@@ -90,7 +94,7 @@ DATABASE_URL=jdbc:mariadb://db-5308.cs.dal.ca:3306/CSCI5308_1_DEVINT
 DB_HOST=db-5308.cs.dal.ca
 DB_NAME=CSCI5308_1_DEVINT
 DB_USER=CSCI5308_1_DEVINT_USER
-DB_PASSWORD=Pohcoo5tig
+DB_PASSWORD=<your-password>
 
 AIRPORT_NAME=Halifax (YHZ)
 ```

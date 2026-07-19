@@ -60,9 +60,7 @@ const getStatusColor = (status: string) => {
   }
 };
 
-export default function DeparturesScreen({
-  showHeader = true,
-}: DeparturesScreenProps) {
+export default function DeparturesScreen(_props: DeparturesScreenProps) {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [data, setData] = useState([]);
 

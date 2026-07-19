@@ -1,311 +1,138 @@
-# HFXAIR - Halifax Stanfield International Airport App
+# HFXAir
 
-A mobile application for travelers at Halifax Stanfield International Airport (YHZ) providing real-time flight information, airport shop directory, and item reservation system.
+[![CI](https://github.com/beaprogram/HFXAir/actions/workflows/ci.yml/badge.svg)](https://github.com/beaprogram/HFXAir/actions/workflows/ci.yml)
 
----
-## Features Description
+A team-built mobile experience for Halifax Stanfield International Airport (YHZ). HFXAir combines flight lookup, an airport shop directory, reservations, JWT-protected flows, and Firebase Cloud Messaging in a React Native client and Flask API.
 
-Click on [Features](Documentation/USER_STORIES.md) to view the explanation of features implemented in the application.
+## Project status
 
-## Technology Stack
+HFXAir was developed as a Dalhousie course project. The application code, automated tests, GitLab pipeline definition, refactoring reports, and historical deployment documentation are present. The course database/VM deployment should be treated as historical infrastructure, not a currently supported public demo.
 
-| Layer | Technologies |
-|-------|--------------|
-| Frontend | React Native 0.82.1, TypeScript, React 19.1.1 |
-| Backend | Python Flask, Flask-SQLAlchemy |
-| Database | MariaDB (db-5308.cs.dal.ca) |
-| Authentication | JWT (PyJWT) |
-| Push Notifications | Firebase Cloud Messaging |
-| Background Jobs | APScheduler |
+GitHub Actions now provides repository-level test feedback. It does not deploy the application.
 
----
+## Implemented capabilities
 
-## Dependencies
+- Browse arrivals, departures, and flight details from the configured MariaDB database.
+- Authenticate using flight and ticket information and receive a JWT.
+- Browse airport shops, opening hours, categories, and items.
+- Create, list, and cancel item reservations.
+- Subscribe devices and send Firebase push notifications.
+- Run scheduled backend notification work through APScheduler.
+- Exercise backend routes with pytest and the mobile shell with Jest.
 
-### Frontend Dependencies
+Detailed user stories are in [Documentation/USER_STORIES.md](Documentation/USER_STORIES.md).
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| react | 19.1.1 | React library |
-| react-native | 0.82.1 | Mobile framework |
-| @react-navigation/native | ^7.1.19 | Navigation framework |
-| @react-navigation/stack | ^7.6.3 | Stack navigation |
-| @react-native-firebase/app | ^23.5.0 | Firebase core SDK |
-| @react-native-firebase/messaging | ^23.5.0 | Push notifications |
-| axios | ^1.12.2 | HTTP client |
-| react-native-gesture-handler | ^2.20.2 | Gesture handling |
-| react-native-safe-area-context | ^5.6.2 | Safe area handling |
-| react-native-screens | ^4.18.0 | Native screen components |
-| react-native-vector-icons | ^10.2.0 | Icon library |
+## Architecture
 
-#### Dev Dependencies
+```mermaid
+flowchart LR
+    APP["React Native + TypeScript"] -->|REST / JSON| API["Flask API"]
+    API --> DB[("MariaDB")]
+    API --> FCM["Firebase Cloud Messaging"]
+    JOBS["APScheduler jobs"] --> API
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| typescript | ^5.8.3 | TypeScript compiler |
-| @babel/core | ^7.25.2 | Babel compiler |
-| jest | ^29.6.3 | Testing framework |
-| eslint | ^8.19.0 | Code linting |
-| prettier | 2.8.8 | Code formatting |
+    GHA["GitHub Actions"] -. test .-> APP
+    GHA -. test .-> API
+    GL["Historical GitLab pipeline"] -. course deployment .-> API
+```
 
-### Backend Dependencies
+## Technology
 
-| Package | Purpose |
-|---------|---------|
-| flask | Web framework for REST API |
-| flask_sqlalchemy | SQLAlchemy integration |
-| PyMySQL | MySQL/MariaDB database driver |
-| python-dotenv | Environment variable management |
-| pyjwt | JWT token encoding/decoding |
-| firebase-admin | Firebase Admin SDK for push notifications |
-| pytz | Timezone handling (America/Halifax) |
-| APScheduler | Background job scheduling |
-| pytest | Testing framework |
-| pytest-flask | Flask testing utilities |
-| pytest-cov | Test coverage reporting |
+| Layer | Tools |
+|---|---|
+| Mobile | React Native 0.82, React 19, TypeScript, React Navigation |
+| API | Python, Flask, PyMySQL, PyJWT |
+| Data | MariaDB |
+| Notifications | Firebase Cloud Messaging, APScheduler |
+| Quality | Jest, pytest, pytest-cov, historical Designite reports |
+| Delivery | GitHub Actions for tests; historical GitLab/VM deployment files |
 
----
+## Local setup
 
-## Build and Deployment Instructions
+### Backend
 
-### Prerequisites
+Requires Python 3.10+ and access to a compatible MariaDB schema.
 
-- Node.js >= 20
-- Python 3.8+
-- Android Studio (for Android development, make an android simulator)
-- Firebase project with Cloud Messaging enabled
-
-### Frontend Setup
-
-1. **Navigate to frontend directory:**
-   ```bash
-   cd frontend
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Configure API base URL:**
-   
-   Edit `src/services/axiosProvider.ts` and update the `baseURL`:
-   ```typescript
-   const axiosInstance: AxiosInstance = axios.create({
-     baseURL: 'http://172.17.1.217',
-     timeout: 10000,
-     headers: {
-       'Content-Type': 'application/json',
-     },
-   });
-   ```
-
-4. **Add Firebase configuration:**
-   
-   Place `google-services.json` in `frontend/android/app/`
-
-5. **Start Metro bundler:**
-   ```bash
-   npm start
-   ```
-
-6. **Run on Android (in a new terminal):**
-   ```bash
-   npx react-native run-android
-   ```
-
-### Backend Setup
-
-1. **Navigate to backend directory:**
-   ```bash
-   cd flask_app
-   ```
-
-2. **Create virtual environment:**
-   ```bash
-   python -m venv venv
-   ```
-
-3. **Activate virtual environment:**
-   
-   On Linux/Mac:
-   ```bash
-   source venv/bin/activate
-   ```
-   
-   On Windows:
-   ```bash
-   venv\Scripts\activate
-   ```
-
-4. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-5. **Create `.env` file:**
-   
-   Create a `.env` file in `flask_app/` with the following configuration:
-   ```env
-   FLASK_ENV=production
-   
-   DATABASE_URL=jdbc:mariadb://db-5308.cs.dal.ca:3306/CSCI5308_1_DEVINT
-   DB_HOST=db-5308.cs.dal.ca
-   DB_NAME=CSCI5308_1_DEVINT
-   DB_USER=CSCI5308_1_DEVINT_USER
-   DB_PASSWORD=<your_password>
-   
-   AIRPORT_NAME=Halifax (YHZ)
-   ```
-
-6. **Add Firebase service account key:**
-   
-   Place your Firebase service account JSON file in the `flask_app/` directory.
-
-7. **Run the server:**
-   ```bash
-   flask run --host=0.0.0.0
-   ```
-   
-   Or for production:
-   ```bash
-   python app.py
-   ```
-
-### Verifying Database Connection
-
-Run the database connection test:
 ```bash
-cd flask_app
-python test_db_connection.py
+git clone https://github.com/beaprogram/HFXAir.git
+cd HFXAir
+
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+python -m pip install -r flask_app/requirements.txt
+
+cp flask_app/.env.example flask_app/.env
+# Fill in local database values and a strong JWT_SECRET.
+python -m flask --app flask_app.app run
 ```
 
-Expected output:
-```
-[OK] Connected successfully!
-[OK] MariaDB/MySQL version: 10.6.12
-[OK] Flights table exists with 42 rows
-[OK] Database connection test passed!
-```
+Do not reuse the historical course database credentials shown in old commits. Use a local database and rotate any credential that was previously published.
 
----
+### Mobile client
 
-## DEPLOYMENT INSTRUCTIONS
+Requires Node.js 20+, the React Native Android/iOS toolchain, and a Firebase client configuration for your own project.
 
-Click on [Deployment](Documentation/Deployment.md) to check the complete deployment instructions along with major issues and its solution.
+```bash
+cd frontend
+npm ci
+npm start
 
-## Project Structure
-
-```
-group01/
-├── frontend/                 # React Native mobile app
-│   ├── src/
-│   │   ├── components/       # Reusable UI components
-│   │   ├── screens/          # Screen components
-│   │   │   ├── auth/         # Login, Loading, GuestFlight
-│   │   │   ├── shops/        # Shop views and catalog
-│   │   │   └── tabs/         # Main tab screens
-│   │   ├── hooks/            # Custom React hooks
-│   │   ├── services/         # API communication (Axios)
-│   │   ├── navigation/       # Navigation configuration
-│   │   ├── types/            # TypeScript definitions
-│   │   └── utils/            # Helper functions
-│   ├── android/              # Android native code
-│   └── package.json          # Frontend dependencies
-│
-├── flask_app/                # Flask REST API backend
-│   ├── app.py                # Main application
-│   ├── auth.py               # JWT authentication
-│   ├── shop.py               # Shop endpoints
-│   ├── booking.py            # Booking endpoints
-│   ├── helper/               # Firebase & cron helpers
-│   ├── tests/                # Pytest test suite
-│   ├── requirements.txt      # Python dependencies
-│   └── .env                  # Environment configuration
-│
-└── README.md                 # This file
+# In another terminal:
+npx react-native run-android
 ```
 
----
+Configure the API base URL in `frontend/src/services/axiosProvider.ts`. Supply your own `frontend/android/app/google-services.json`; it is ignored by Git.
 
-## API Endpoints
+## API overview
 
-### Authentication
+| Method | Route | Purpose |
+|---|---|---|
+| `POST` | `/login` | Exchange flight/ticket data for a JWT |
+| `GET` | `/flights` | List flights |
+| `GET` | `/flights/<id>` | Get flight details |
+| `GET` | `/flights/arrivals` | List arrivals |
+| `GET` | `/flights/departures` | List departures |
+| `GET` | `/shops` | List airport shops |
+| `GET` | `/shops/<id>/items` | List shop items |
+| `GET` | `/bookings` | List the authenticated user's bookings |
+| `POST` | `/bookings` | Create a reservation |
+| `POST` | `/bookings/<id>/cancel` | Cancel a reservation |
+| `POST` | `/subscribe` | Register for flight notifications |
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/login` | Authenticate with flight_number and ticket_number |
+## Run the checks
 
-### Flights
+```bash
+# Backend
+python -m pip install -r flask_app/requirements.txt
+pytest flask_app/tests -q
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/flights` | Get all flights |
-| GET | `/flights/<flight_id>` | Get flight details |
-| GET | `/flights/arrivals` | Get arriving flights |
-| GET | `/flights/departures` | Get departing flights |
+# Mobile
+cd frontend
+npm ci
+npm run lint
+npm test -- --runInBand --watchAll=false
+```
 
-### Shops
+Some integration scenarios require a configured database or Firebase project. Tests that need those services should use dedicated test credentials and must not connect to production or course infrastructure from pull requests.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/shops` | List all shops |
-| GET | `/shops/<shop_id>` | Get shop details |
-| GET | `/shops/<shop_id>/hours` | Get shop hours |
-| GET | `/shops/<shop_id>/items` | Get shop items |
-| GET | `/shops/categories` | Get shop categories |
+## Repository map
 
-### Bookings
+```text
+frontend/                 React Native application and Jest tests
+flask_app/                Flask routes, helpers, and pytest suite
+Documentation/            User stories, design, TDD, refactoring, and historical deployment notes
+.gitlab-ci.yml             Historical course CI/CD pipeline
+.github/workflows/ci.yml   Current GitHub test workflow
+```
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/bookings` | Get user's bookings |
-| POST | `/bookings` | Create reservation |
-| POST | `/bookings/<id>/cancel` | Cancel reservation |
+## Product evidence
 
-### Notifications
+The repository does not yet include reviewed product screenshots. Follow [Documentation/screenshots/README.md](Documentation/screenshots/README.md) to add mobile captures without exposing ticket numbers, tokens, Firebase identifiers, or personal information.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/send-notification` | Send push notification |
-| POST | `/subscribe` | Subscribe to flight updates |
+## Security
 
----
+Read [SECURITY.md](SECURITY.md) before configuring the app. Database passwords, Firebase service-account files, JWT secrets, and access tokens must never be committed.
 
-## Usage Scenarios
+## License
 
-Click on [Usage](Documentation/Usage_Scenarios.md) to find all the usage scenarios of all the features implemented in the applicaton.
-
----
-
-## CI/CD Pipeline
-We followed **Build** ----> **Test**(80% Code Coverage) -----> **Deploy** ----> **Code quality** with four stages for CI/CD pipeline development.
-
-Click on [CI/CD](Documentation/CICD_PIPELINE_SETUP.md) to know about the complete CI/CD Pipeline setup for the application along with proper explanation with commans and some issues and its solution.
-
----
-
-## TDD (Test-Driven Development)
-
-Click on [TDD](Documentation/TDD_Documentation.md) to see the complete documentation on TDD.
-
----
-
-## Design Principles
-
-Click on [Design](Documentation/Design_Principles.md) to know about the implementation of design principles in the development part of the application.
-
-## Code Quality Analysis
-
-Click on [Code-Quality](Documentation/REFACTORING_DOCUMENTATION.md) to find the refactoring documentation and also gives explanation of smells identified and refactored.
-
-
-## Code Quality Reports
-
-Go to **Documentation/Code_Quality_Files(Before Refactoring)** for code quality reports before refactoring.
-
-Go to **Documentation/Code_Quality_Files(After Refactoring)** for code quality reports after refactoring.
-
-## Other Clean Code Practices
-
-Click on [Other_Clean_Code_Practices](Documentation/Clean_Code_Documentation.md) for information about clean code practices followed in the main files of the backend part.
+No open-source license has been selected for this team course project. Until the contributors choose one, the code remains copyrighted by its contributors.
